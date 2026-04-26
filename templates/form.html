@@ -1,0 +1,55 @@
+{{define "form"}}
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+  <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-gray-100">{{.Title}}</h2>
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+      <input type="number" name="amount" step="0.01" value="{{if .Expense}}{{printf "%.2f" .Expense.Amount}}{{end}}" placeholder="0.00" required
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+      <input type="text" name="description" value="{{if .Expense}}{{.Expense.Description}}{{end}}" placeholder="e.g. lunch with team" required
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+      <input type="text" id="cat-input" name="category" value="{{if .Expense}}{{.Expense.Category}}{{end}}" placeholder="e.g. groceries" required
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+      <div id="cat-pills" class="flex flex-wrap gap-2 mt-2"></div>
+      <script>
+        (function(){
+          var container = document.getElementById('cat-pills');
+          var input = document.getElementById('cat-input');
+          if(!container) return;
+          fetch('/api/categories').then(function(r){ return r.json(); }).then(function(json){
+            var cats = json.data || [];
+            if(cats.length === 0) return;
+            cats.forEach(function(cat){
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.textContent = cat;
+              btn.className = 'text-xs font-medium bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-3 py-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800 transition';
+              btn.onclick = function(){ input.value = cat; };
+              container.appendChild(btn);
+            });
+          });
+        })();
+      </script>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+      <input type="date" name="date" value="{{if .Expense}}{{.Expense.Date}}{{else}}{{.Today}}{{end}}"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100">
+    </div>
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="flex-1 bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 transition">
+        {{.SubmitLabel}}
+      </button>
+      <a href="/" class="flex-1 text-center bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium py-2.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+        Cancel
+      </a>
+    </div>
+  </div>
+</div>
+{{end}}
