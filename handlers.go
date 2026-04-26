@@ -17,6 +17,7 @@ type CreateExpenseReq struct {
 	Category    string  `json:"category"`
 	Description string  `json:"description,omitempty"`
 	Date        string  `json:"date,omitempty"`
+	Currency    string  `json:"currency,omitempty"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -36,7 +37,7 @@ func handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := addExpense(req.Amount, strings.TrimSpace(req.Category), strings.TrimSpace(req.Description), req.Date)
+	id, err := addExpense(req.Amount, strings.TrimSpace(req.Category), strings.TrimSpace(req.Description), req.Date, req.Currency)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, APIResponse{Error: err.Error()})
 		return
@@ -81,7 +82,7 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, APIResponse{Error: "amount, description and category required"})
 		return
 	}
-	if err := updateExpense(id, req.Amount, strings.TrimSpace(req.Category), strings.TrimSpace(req.Description), req.Date); err != nil {
+	if err := updateExpense(id, req.Amount, strings.TrimSpace(req.Category), strings.TrimSpace(req.Description), req.Date, req.Currency); err != nil {
 		writeJSON(w, http.StatusNotFound, APIResponse{Error: err.Error()})
 		return
 	}

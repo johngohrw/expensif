@@ -71,6 +71,7 @@ func parseTemplates() {
 				return humanize.Time(t)
 			}
 		},
+		"currencySymbol": currencySymbol,
 	}
 
 	parsePage := func(files ...string) *template.Template {
@@ -190,6 +191,7 @@ func handleCreateHTML(w http.ResponseWriter, r *http.Request) {
 	date := r.FormValue("date")
 	category := r.FormValue("category")
 	description := r.FormValue("description")
+	currency := r.FormValue("currency")
 
 	if amount <= 0 || category == "" || description == "" {
 		data := basePageData("add")
@@ -199,7 +201,7 @@ func handleCreateHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := addExpense(amount, category, description, date)
+	_, err := addExpense(amount, category, description, date, currency)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -234,6 +236,7 @@ func handleUpdateHTML(w http.ResponseWriter, r *http.Request) {
 	date := r.FormValue("date")
 	category := r.FormValue("category")
 	description := r.FormValue("description")
+	currency := r.FormValue("currency")
 
 	if amount <= 0 || category == "" || description == "" {
 		expense, _ := getExpense(id)
@@ -245,7 +248,7 @@ func handleUpdateHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := updateExpense(id, amount, category, description, date); err != nil {
+	if err := updateExpense(id, amount, category, description, date, currency); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

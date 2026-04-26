@@ -12,16 +12,20 @@ type Expense struct {
 	Category    string
 	Description string
 	Date        string // YYYY-MM-DD
+	Currency    string
 	CreatedAt   time.Time
 }
 
-func addExpense(amount float64, category, description, date string) (int64, error) {
+func addExpense(amount float64, category, description, date, currency string) (int64, error) {
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
 	}
+	if currency == "" {
+		currency = "USD"
+	}
 	res, err := db.Exec(
-		`INSERT INTO expenses (amount, category, description, date) VALUES (?, ?, ?, ?)`,
-		amount, category, description, date,
+		`INSERT INTO expenses (amount, category, description, date, currency) VALUES (?, ?, ?, ?, ?)`,
+		amount, category, description, date, currency,
 	)
 	if err != nil {
 		return 0, err
@@ -31,7 +35,7 @@ func addExpense(amount float64, category, description, date string) (int64, erro
 
 func listExpenses(limit int) ([]Expense, error) {
 	rows, err := db.Query(
-		`SELECT id, amount, category, description, date, created_at FROM expenses ORDER BY date DESC, created_at DESC LIMIT ?`,
+		`SELECT id, amount, category, description, date, currency, created_at FROM expenses ORDER BY date DESC, created_at DESC LIMIT ?`,
 		limit,
 	)
 	if err != nil {
@@ -43,7 +47,7 @@ func listExpenses(limit int) ([]Expense, error) {
 	for rows.Next() {
 		var e Expense
 		var createdAt string
-		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &createdAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &createdAt); err != nil {
 			return nil, err
 		}
 		e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
@@ -90,8 +94,8 @@ func getExpense(id int64) (*Expense, error) {
 	var e Expense
 	var createdAt string
 	err := db.QueryRow(
-		`SELECT id, amount, category, description, date, created_at FROM expenses WHERE id = ?`, id,
-	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &createdAt)
+		`SELECT id, amount, category, description, date, currency, created_at FROM expenses WHERE id = ?`, id,
+	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &createdAt)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("no expense with id %d", id)
 	}
@@ -102,13 +106,16 @@ func getExpense(id int64) (*Expense, error) {
 	return &e, nil
 }
 
-func updateExpense(id int64, amount float64, category, description, date string) error {
+func updateExpense(id int64, amount float64, category, description, date, currency string) error {
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
 	}
+	if currency == "" {
+		currency = "USD"
+	}
 	res, err := db.Exec(
-		`UPDATE expenses SET amount = ?, category = ?, description = ?, date = ? WHERE id = ?`,
-		amount, category, description, date, id,
+		`UPDATE expenses SET amount = ?, category = ?, description = ?, date = ?, currency = ? WHERE id = ?`,
+		amount, category, description, date, currency, id,
 	)
 	if err != nil {
 		return err

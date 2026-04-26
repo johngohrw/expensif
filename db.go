@@ -60,6 +60,15 @@ func migrate() error {
 		}
 	}
 
+	// Currency column on expenses
+	var hasCurrency int
+	db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('expenses') WHERE name = 'currency'`).Scan(&hasCurrency)
+	if hasCurrency == 0 {
+		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN currency TEXT DEFAULT 'USD'`); err != nil {
+			return err
+		}
+	}
+
 	// Preferences table
 	prefsSchema := `
 	CREATE TABLE IF NOT EXISTS preferences (
