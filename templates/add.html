@@ -1,6 +1,6 @@
 {{define "title"}}New Expense{{end}}
 {{define "content"}}
 <form method="POST" action="/expenses/new">
-  {{template "form" dict "Title" "New Expense" "SubmitLabel" "Add Expense" "Today" .Today}}
+  {{template "form" dict "Title" "New Expense" "SubmitLabel" "Create" "Today" .Today "IsAdd" true}}
 </form>
 {{end}}

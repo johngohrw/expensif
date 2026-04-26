@@ -59,7 +59,17 @@ func parseTemplates() {
 			if err != nil {
 				return dateStr
 			}
-			return humanize.Time(t)
+			today := time.Now().Truncate(24 * time.Hour)
+			date := t.Truncate(24 * time.Hour)
+			diff := int(today.Sub(date).Hours() / 24)
+			switch diff {
+			case 0:
+				return "Today"
+			case 1:
+				return "Yesterday"
+			default:
+				return humanize.Time(t)
+			}
 		},
 	}
 
@@ -195,7 +205,11 @@ func handleCreateHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	if r.FormValue("action") == "another" {
+		http.Redirect(w, r, "/expenses/new", http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
 }
 
 func handleEditHTML(w http.ResponseWriter, r *http.Request) {

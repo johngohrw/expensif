@@ -1,62 +1,116 @@
-{{define "title"}}Daily View{{end}}
-{{define "content"}}
-{{if .DailyGroups}}
-  <div class="space-y-6">
+{{define "title"}}Daily View{{end}} {{define "content"}} {{if .DailyGroups}}
+<div class="space-y-6">
   {{range .DailyGroups}}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <div>
-          <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">{{humanDate .Date}}</h3>
-          <p class="text-sm text-gray-400 dark:text-gray-500">{{.Date}}</p>
+  <div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+  >
+    <div
+      class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between"
+    >
+      <div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+          {{.Date}}
+        </h3>
+        <p class="text-sm text-gray-400 dark:text-gray-500">
+          {{humanDate .Date}}
+        </p>
+      </div>
+      <div class="text-right">
+        <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
+          {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
         </div>
-        <div class="text-right">
-          <div class="text-lg font-bold text-gray-900 dark:text-gray-100">{{$.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
-          <a href="/expenses/new?date={{.Date}}" class="text-xs text-blue-600 hover:underline">+ Add expense</a>
-        </div>
+        <a
+          href="/expenses/new?date={{.Date}}"
+          class="text-xs text-blue-600 hover:underline"
+          >+ Add expense</a
+        >
       </div>
-      {{if .Expenses}}
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">Amount</th>
-              <th class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">Category</th>
-              <th class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs">Description</th>
-              <th class="px-6 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range .Expenses}}
-            <tr class="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td class="px-6 py-3 font-medium">{{$.CurrencySymbol}}{{printf "%.2f" .Amount}}</td>
-              <td class="px-6 py-3"><span class="inline-block bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium">{{.Category}}</span></td>
-              <td class="px-6 py-3 text-gray-600 dark:text-gray-400">{{.Description}}</td>
-              <td class="px-6 py-3">
-                <div class="flex gap-2 justify-end">
-                  <a href="/expenses/edit/{{.ID}}"><button class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">Edit</button></a>
-                  <form method="POST" action="/expenses/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete expense #{{.ID}}?')">
-                    <button type="submit" class="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 dark:hover:bg-red-800 transition">Delete</button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
-      </div>
-      {{else}}
-      <div class="px-6 py-6 text-sm text-gray-400 dark:text-gray-500 italic">
-        No expenses for this day.
-        <a href="/expenses/new?date={{.Date}}" class="text-blue-600 hover:underline not-italic ml-1">Add one</a>
-      </div>
-      {{end}}
     </div>
-  {{end}}
+    {{if .Expenses}}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th
+              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+            >
+              Amount
+            </th>
+            <th
+              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+            >
+              Category
+            </th>
+            <th
+              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+            >
+              Description
+            </th>
+            <th class="px-6 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Expenses}}
+          <tr
+            class="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <td class="px-6 py-3 font-medium">
+              {{$.CurrencySymbol}}{{printf "%.2f" .Amount}}
+            </td>
+            <td class="px-6 py-3">
+              <span
+                class="inline-block bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium"
+                >{{.Category}}</span
+              >
+            </td>
+            <td class="px-6 py-3 text-gray-600 dark:text-gray-400">
+              {{.Description}}
+            </td>
+            <td class="px-6 py-3">
+              <div class="flex gap-2 justify-end">
+                <a href="/expenses/edit/{{.ID}}"
+                  ><button
+                    class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                  >
+                    Edit
+                  </button></a
+                >
+                <form
+                  method="POST"
+                  action="/expenses/delete/{{.ID}}"
+                  class="inline"
+                  onsubmit="return confirm('Delete expense #{{.ID}}?')"
+                >
+                  <button
+                    type="submit"
+                    class="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 dark:hover:bg-red-800 transition"
+                  >
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <div class="px-6 py-6 text-sm text-gray-400 dark:text-gray-500 italic">
+      No expenses for this day.
+      <a
+        href="/expenses/new?date={{.Date}}"
+        class="text-blue-600 hover:underline not-italic ml-1"
+        >Add one</a
+      >
+    </div>
+    {{end}}
   </div>
+  {{end}}
+</div>
 {{else}}
 <div class="text-center text-gray-400 dark:text-gray-500 py-16">
   No expenses yet.
   <a href="/expenses/new" class="text-blue-600 hover:underline ml-1">Add one</a>
 </div>
-{{end}}
-{{end}}
+{{end}} {{end}}
