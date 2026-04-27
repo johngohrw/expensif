@@ -8,12 +8,8 @@
       class="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
     >
       <div>
-        <h3 class="text-lg font-bold text-gray-900">
-          {{.Date}}
-        </h3>
-        <p class="text-sm text-gray-400">
-          {{humanDate .Date}}
-        </p>
+        <h3 class="text-lg font-bold text-gray-900">{{.Date}}</h3>
+        <p class="text-sm text-gray-400">{{humanDate .Date}}</p>
       </div>
       <div class="text-right">
         {{if .ConvertedTotal}}
@@ -35,21 +31,15 @@
     {{if .Expenses}}
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50">
+        <thead class="bg-[#fdfdfd]">
           <tr>
-            <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
-            >
+            <th class="text-left px-6 py-2 font-semibold text-gray-500 text-xs">
               Amount
             </th>
-            <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
-            >
+            <th class="text-left px-6 py-2 font-semibold text-gray-500 text-xs">
               Category
             </th>
-            <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
-            >
+            <th class="text-left px-6 py-2 font-semibold text-gray-500 text-xs">
               Description
             </th>
             <th class="px-6 py-2"></th>
@@ -57,13 +47,15 @@
         </thead>
         <tbody>
           {{range .Expenses}}
-          <tr
-            class="border-t border-gray-100 hover:bg-gray-50"
-          >
+          <tr class="border-t border-gray-100 hover:bg-gray-50">
             <td class="px-6 py-3">
-              <div class="font-medium">{{$.CurrencySymbol}}{{printf "%.2f" .ConvertedAmount}}</div>
+              <div class="font-medium">
+                {{$.CurrencySymbol}}{{printf "%.2f" .ConvertedAmount}}
+              </div>
               {{if ne .Currency $.Currency}}
-              <div class="text-xs text-gray-400">{{currencySymbol .Currency}}{{printf "%.2f" .Amount}}</div>
+              <div class="text-xs text-gray-400">
+                {{currencySymbol .Currency}}{{printf "%.2f" .Amount}}
+              </div>
               {{end}}
             </td>
             <td class="px-6 py-3">
@@ -72,9 +64,7 @@
                 >{{.Category}}</span
               >
             </td>
-            <td class="px-6 py-3 text-gray-600">
-              {{.Description}}
-            </td>
+            <td class="px-6 py-3 text-gray-600">{{.Description}}</td>
             <td class="px-6 py-3">
               <div class="flex gap-2 justify-end">
                 <a href="/expenses/edit/{{.ID}}"
