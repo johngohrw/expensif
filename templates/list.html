@@ -1,39 +1,50 @@
 {{define "title"}}Expenses{{end}}
 {{define "content"}}
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-  <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
-  <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+  {{if .ShowConverted}}
+  <div class="text-2xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}</div>
+  <div class="text-sm text-gray-500 mt-1">
     {{range $i, $c := .Categories}}{{if $i}} · {{end}}{{$c.Name}}: {{$.CurrencySymbol}}{{printf "%.2f" $c.Amount}}{{end}}
   </div>
+  <div class="text-xs text-gray-400 mt-1">Converted using rates from {{.RateDate}}</div>
+  {{else}}
+  <div class="text-2xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
+  <div class="text-sm text-gray-500 mt-1">Currency conversion unavailable — rates will be fetched shortly.</div>
+  {{end}}
 </div>
 
 {{if .Expenses}}
-<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
-      <thead class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+      <thead class="bg-gray-50 border-b border-gray-200">
         <tr>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Date</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Amount</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Category</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Description</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Amount</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Category</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Description</th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
       <tbody>
         {{range .Expenses}}
-        <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+        <tr class="border-b border-gray-100 hover:bg-gray-50">
           <td class="px-4 py-3" title="{{.Date}}">{{humanDate .Date}}</td>
-          <td class="px-4 py-3 font-medium">{{currencySymbol .Currency}}{{printf "%.2f" .Amount}}</td>
-          <td class="px-4 py-3"><span class="inline-block bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium">{{.Category}}</span></td>
-          <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{if .Description}}{{.Description}}{{else}}-{{end}}</td>
+          <td class="px-4 py-3">
+            <div class="font-medium">{{$.CurrencySymbol}}{{printf "%.2f" .ConvertedAmount}}</div>
+            {{if ne .Currency $.Currency}}
+            <div class="text-xs text-gray-400">{{currencySymbol .Currency}}{{printf "%.2f" .Amount}}</div>
+            {{end}}
+          </td>
+          <td class="px-4 py-3"><span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{{.Category}}</span></td>
+          <td class="px-4 py-3 text-gray-600">{{if .Description}}{{.Description}}{{else}}-{{end}}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2 justify-end">
               <a href="/expenses/edit/{{.ID}}">
-                <button class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition">Edit</button>
+                <button class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition">Edit</button>
               </a>
               <form method="POST" action="/expenses/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete expense #{{.ID}}?')">
-                <button type="submit" class="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 dark:hover:bg-red-800 transition">Delete</button>
+                <button type="submit" class="bg-red-50 text-red-600 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 transition">Delete</button>
               </form>
             </div>
           </td>
@@ -44,7 +55,7 @@
   </div>
 </div>
 {{else}}
-<div class="text-center text-gray-400 dark:text-gray-500 py-16">
+<div class="text-center text-gray-400 py-16">
   No expenses yet.
   <a href="/expenses/new" class="text-blue-600 hover:underline ml-1">Add one</a>
 </div>

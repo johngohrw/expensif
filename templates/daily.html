@@ -2,23 +2,29 @@
 <div class="space-y-6">
   {{range .DailyGroups}}
   <div
-    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+    class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
   >
     <div
-      class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between"
+      class="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
     >
       <div>
-        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+        <h3 class="text-lg font-bold text-gray-900">
           {{.Date}}
         </h3>
-        <p class="text-sm text-gray-400 dark:text-gray-500">
+        <p class="text-sm text-gray-400">
           {{humanDate .Date}}
         </p>
       </div>
       <div class="text-right">
-        <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
+        {{if .ConvertedTotal}}
+        <div class="text-lg font-bold text-gray-900">
+          {{$.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}
+        </div>
+        {{else}}
+        <div class="text-lg font-bold text-gray-900">
           {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
         </div>
+        {{end}}
         <a
           href="/expenses/new?date={{.Date}}"
           class="text-xs text-blue-600 hover:underline"
@@ -29,20 +35,20 @@
     {{if .Expenses}}
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-700">
+        <thead class="bg-gray-50">
           <tr>
             <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
             >
               Amount
             </th>
             <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
             >
               Category
             </th>
             <th
-              class="text-left px-6 py-2 font-semibold text-gray-500 dark:text-gray-400 text-xs"
+              class="text-left px-6 py-2 font-semibold text-gray-500 text-xs"
             >
               Description
             </th>
@@ -52,25 +58,28 @@
         <tbody>
           {{range .Expenses}}
           <tr
-            class="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+            class="border-t border-gray-100 hover:bg-gray-50"
           >
-            <td class="px-6 py-3 font-medium">
-              {{currencySymbol .Currency}}{{printf "%.2f" .Amount}}
+            <td class="px-6 py-3">
+              <div class="font-medium">{{$.CurrencySymbol}}{{printf "%.2f" .ConvertedAmount}}</div>
+              {{if ne .Currency $.Currency}}
+              <div class="text-xs text-gray-400">{{currencySymbol .Currency}}{{printf "%.2f" .Amount}}</div>
+              {{end}}
             </td>
             <td class="px-6 py-3">
               <span
-                class="inline-block bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded text-xs font-medium"
+                class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium"
                 >{{.Category}}</span
               >
             </td>
-            <td class="px-6 py-3 text-gray-600 dark:text-gray-400">
+            <td class="px-6 py-3 text-gray-600">
               {{.Description}}
             </td>
             <td class="px-6 py-3">
               <div class="flex gap-2 justify-end">
                 <a href="/expenses/edit/{{.ID}}"
                   ><button
-                    class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                    class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition"
                   >
                     Edit
                   </button></a
@@ -83,7 +92,7 @@
                 >
                   <button
                     type="submit"
-                    class="bg-red-50 dark:bg-red-900 text-red-600 dark:text-red-300 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 dark:hover:bg-red-800 transition"
+                    class="bg-red-50 text-red-600 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 transition"
                   >
                     Delete
                   </button>
@@ -96,7 +105,7 @@
       </table>
     </div>
     {{else}}
-    <div class="px-6 py-6 text-sm text-gray-400 dark:text-gray-500 italic">
+    <div class="px-6 py-6 text-sm text-gray-400 italic">
       No expenses for this day.
       <a
         href="/expenses/new?date={{.Date}}"
@@ -109,7 +118,7 @@
   {{end}}
 </div>
 {{else}}
-<div class="text-center text-gray-400 dark:text-gray-500 py-16">
+<div class="text-center text-gray-400 py-16">
   No expenses yet.
   <a href="/expenses/new" class="text-blue-600 hover:underline ml-1">Add one</a>
 </div>

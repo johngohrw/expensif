@@ -1,0 +1,103 @@
+package db
+
+import (
+	"database/sql"
+	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+
+	_ "modernc.org/sqlite"
+)
+
+func New() (*sql.DB, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("get home dir: %w", err)
+	}
+	dbDir := filepath.Join(home, ".expensif")
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		return nil, fmt.Errorf("create db dir: %w", err)
+	}
+	dbPath := filepath.Join(dbDir, "expenses.db")
+
+	db, err := sql.Open("sqlite", "file:"+dbPath+"?_fk=1")
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+
+	if err := migrate(db); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
+
+	return db, nil
+}
+
+func migrate(db *sql.DB) error {
+	schema := `
+	CREATE TABLE IF NOT EXISTS expenses (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		amount REAL NOT NULL,
+		category TEXT NOT NULL,
+		description TEXT,
+		date TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+	CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+	`
+	if _, err := db.Exec(schema); err != nil {
+		return err
+	}
+
+	var hasDate int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('expenses') WHERE name = 'date'`).Scan(&hasDate); err != nil {
+		return err
+	}
+	if hasDate == 0 {
+		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN date TEXT`); err != nil {
+			return err
+		}
+		if _, err := db.Exec(`UPDATE expenses SET date = date('now') WHERE date IS NULL`); err != nil {
+			return err
+		}
+	}
+
+	var hasCurrency int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('expenses') WHERE name = 'currency'`).Scan(&hasCurrency); err != nil {
+		return err
+	}
+	if hasCurrency == 0 {
+		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN currency TEXT DEFAULT 'USD'`); err != nil {
+			return err
+		}
+	}
+
+	prefsSchema := `
+	CREATE TABLE IF NOT EXISTS preferences (
+		id INTEGER PRIMARY KEY CHECK (id = 1),
+		currency TEXT DEFAULT 'USD'
+	);
+	INSERT OR IGNORE INTO preferences (id, currency) VALUES (1, 'USD');
+	`
+	if _, err := db.Exec(prefsSchema); err != nil {
+		return err
+	}
+
+	ratesSchema := `
+	CREATE TABLE IF NOT EXISTS exchange_rates (
+		base_currency TEXT NOT NULL,
+		target_currency TEXT NOT NULL,
+		rate REAL NOT NULL,
+		date TEXT NOT NULL,
+		fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (base_currency, target_currency, date)
+	);
+	`
+	if _, err := db.Exec(ratesSchema); err != nil {
+		return err
+	}
+
+	slog.Info("database migrations completed")
+	return nil
+}
