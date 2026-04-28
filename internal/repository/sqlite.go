@@ -24,9 +24,13 @@ func (r *sqliteRepo) CreateExpense(ctx context.Context, e domain.Expense) (int64
 	if e.Currency == "" {
 		e.Currency = "USD"
 	}
+	var paidBy interface{}
+	if e.PaidByID != 0 {
+		paidBy = e.PaidByID
+	}
 	res, err := r.db.ExecContext(ctx,
 		`INSERT INTO expenses (amount, category, description, date, currency, paid_by) VALUES (?, ?, ?, ?, ?, ?)`,
-		e.Amount, e.Category, e.Description, e.Date, e.Currency, e.PaidBy,
+		e.Amount, e.Category, e.Description, e.Date, e.Currency, paidBy,
 	)
 	if err != nil {
 		return 0, err
@@ -48,11 +52,13 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 	for rows.Next() {
 		var e domain.Expense
 		var createdAt string
-		var paidBy sql.NullString
+		var paidBy sql.NullInt64
 		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt); err != nil {
 			return nil, err
 		}
-		e.PaidBy = paidBy.String
+		if paidBy.Valid {
+			e.PaidByID = paidBy.Int64
+		}
 		e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		expenses = append(expenses, e)
 	}
@@ -62,7 +68,7 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense, error) {
 	var e domain.Expense
 	var createdAt string
-	var paidBy sql.NullString
+	var paidBy sql.NullInt64
 	err := r.db.QueryRowContext(ctx,
 		`SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses WHERE id = ?`, id,
 	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt)
@@ -72,7 +78,9 @@ func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense,
 	if err != nil {
 		return nil, err
 	}
-	e.PaidBy = paidBy.String
+	if paidBy.Valid {
+		e.PaidByID = paidBy.Int64
+	}
 	e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	return &e, nil
 }
@@ -84,9 +92,13 @@ func (r *sqliteRepo) UpdateExpense(ctx context.Context, e domain.Expense) error 
 	if e.Currency == "" {
 		e.Currency = "USD"
 	}
+	var paidBy interface{}
+	if e.PaidByID != 0 {
+		paidBy = e.PaidByID
+	}
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE expenses SET amount = ?, category = ?, description = ?, date = ?, currency = ?, paid_by = ? WHERE id = ?`,
-		e.Amount, e.Category, e.Description, e.Date, e.Currency, e.PaidBy, e.ID,
+		e.Amount, e.Category, e.Description, e.Date, e.Currency, paidBy, e.ID,
 	)
 	if err != nil {
 		return err
@@ -272,8 +284,8 @@ func (r *sqliteRepo) DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *sqliteRepo) ClearExpensePaidBy(ctx context.Context, userName string) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE expenses SET paid_by = NULL WHERE paid_by = ?`, userName)
+func (r *sqliteRepo) ClearExpensePaidBy(ctx context.Context, userID int64) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE expenses SET paid_by = NULL WHERE paid_by = ?`, userID)
 	return err
 }
 

@@ -9,7 +9,8 @@ type Expense struct {
 	Description     string
 	Date            string // YYYY-MM-DD
 	Currency        string
-	PaidBy          string
+	PaidByID        int64  `json:"paid_by_id,omitempty"`
+	PaidByName      string `json:"paid_by_name,omitempty"` // computed at render time
 	CreatedAt       time.Time
 	ConvertedAmount float64 `json:"-"` // computed at render time
 }

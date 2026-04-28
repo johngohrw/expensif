@@ -69,6 +69,10 @@ func (h *HTMLHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	if err := h.svc.HydratePaidByNames(ctx, expenses); err != nil {
+		slog.Error("hydrate paid_by names failed", "error", err)
+	}
 	data.Expenses = expenses
 
 	var categories []domain.CategorySummary
@@ -108,6 +112,13 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	for i := range groups {
+		if err := h.svc.HydratePaidByNames(ctx, groups[i].Expenses); err != nil {
+			slog.Error("hydrate paid_by names failed", "error", err)
+			break
+		}
+	}
+
 	data.DailyGroups = groups
 	h.render(w, "daily", data)
 }
@@ -136,9 +147,9 @@ func (h *HTMLHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	category := r.FormValue("category")
 	description := r.FormValue("description")
 	currency := r.FormValue("currency")
-	paidBy := r.FormValue("paid_by")
+	paidByID, _ := strconv.ParseInt(r.FormValue("paid_by_id"), 10, 64)
 
-	_, err := h.svc.CreateExpense(ctx, amount, category, description, date, currency, paidBy)
+	_, err := h.svc.CreateExpense(ctx, amount, category, description, date, currency, paidByID)
 	if err != nil {
 		data := h.basePageData(ctx, "add")
 		data.Flash = err.Error()
@@ -184,9 +195,9 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 	category := r.FormValue("category")
 	description := r.FormValue("description")
 	currency := r.FormValue("currency")
-	paidBy := r.FormValue("paid_by")
+	paidByID, _ := strconv.ParseInt(r.FormValue("paid_by_id"), 10, 64)
 
-	err := h.svc.UpdateExpense(ctx, id, amount, category, description, date, currency, paidBy)
+	err := h.svc.UpdateExpense(ctx, id, amount, category, description, date, currency, paidByID)
 	if err != nil {
 		expense, _ := h.svc.GetExpense(ctx, id)
 		data := h.basePageData(ctx, "edit")

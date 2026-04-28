@@ -78,8 +78,36 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if hasPaidBy == 0 {
-		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN paid_by TEXT`); err != nil {
+		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN paid_by INTEGER`); err != nil {
 			return err
+		}
+	} else {
+		// Column exists — ensure it's INTEGER (not old TEXT)
+		var isInt int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('expenses') WHERE name = 'paid_by' AND type = 'INTEGER'`).Scan(&isInt); err != nil {
+			return err
+		}
+		if isInt == 0 {
+			if _, err := db.Exec(`
+				CREATE TABLE expenses_new (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					amount REAL NOT NULL,
+					category TEXT NOT NULL,
+					description TEXT,
+					date TEXT,
+					currency TEXT DEFAULT 'USD',
+					paid_by INTEGER,
+					created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+				);
+				INSERT INTO expenses_new (id, amount, category, description, date, currency, created_at)
+					SELECT id, amount, category, description, date, currency, created_at FROM expenses;
+				DROP TABLE expenses;
+				ALTER TABLE expenses_new RENAME TO expenses;
+				CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+				CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+			`); err != nil {
+				return fmt.Errorf("migrate paid_by to integer: %w", err)
+			}
 		}
 	}
 

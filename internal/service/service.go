@@ -32,7 +32,7 @@ func New(repo repository.Repository) *Service {
 
 // --- Expenses ---
 
-func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency, paidBy string) (int64, error) {
+func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency string, paidByID int64) (int64, error) {
 	if amount <= 0 {
 		return 0, ErrInvalidAmount
 	}
@@ -51,12 +51,12 @@ func (s *Service) CreateExpense(ctx context.Context, amount float64, category, d
 		currency = "USD"
 	}
 	e := domain.Expense{
-		Amount:      amount,
-		Category:    category,
+		Amount:   amount,
+		Category: category,
 		Description: description,
-		Date:        date,
-		Currency:    currency,
-		PaidBy:      paidBy,
+		Date:     date,
+		Currency: currency,
+		PaidByID: paidByID,
 	}
 	return s.repo.CreateExpense(ctx, e)
 }
@@ -72,7 +72,7 @@ func (s *Service) GetExpense(ctx context.Context, id int64) (*domain.Expense, er
 	return s.repo.GetExpense(ctx, id)
 }
 
-func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency, paidBy string) error {
+func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency string, paidByID int64) error {
 	if amount <= 0 {
 		return ErrInvalidAmount
 	}
@@ -97,13 +97,31 @@ func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, c
 		Description: description,
 		Date:        date,
 		Currency:    currency,
-		PaidBy:      paidBy,
+		PaidByID:    paidByID,
 	}
 	return s.repo.UpdateExpense(ctx, e)
 }
 
 func (s *Service) DeleteExpense(ctx context.Context, id int64) error {
 	return s.repo.DeleteExpense(ctx, id)
+}
+
+// HydratePaidByNames populates PaidByName on each expense by looking up user IDs.
+func (s *Service) HydratePaidByNames(ctx context.Context, expenses []domain.Expense) error {
+	users, err := s.repo.ListUsers(ctx)
+	if err != nil {
+		return err
+	}
+	nameMap := make(map[int64]string, len(users))
+	for _, u := range users {
+		nameMap[u.ID] = u.Name
+	}
+	for i := range expenses {
+		if expenses[i].PaidByID != 0 {
+			expenses[i].PaidByName = nameMap[expenses[i].PaidByID]
+		}
+	}
+	return nil
 }
 
 func (s *Service) ListCategories(ctx context.Context) ([]string, error) {
@@ -196,17 +214,11 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name string) error {
 }
 
 func (s *Service) DeleteUser(ctx context.Context, id int64) error {
-	user, err := s.repo.GetUser(ctx, id)
-	if err != nil {
-		return err
-	}
 	if err := s.repo.DeleteUser(ctx, id); err != nil {
 		return err
 	}
-	if user.Name != "" {
-		if err := s.repo.ClearExpensePaidBy(ctx, user.Name); err != nil {
-			return err
-		}
+	if err := s.repo.ClearExpensePaidBy(ctx, id); err != nil {
+		return err
 	}
 	return nil
 }

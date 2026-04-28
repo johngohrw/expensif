@@ -49,13 +49,13 @@ func (h *APIHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		Description string  `json:"description,omitempty"`
 		Date        string  `json:"date,omitempty"`
 		Currency    string  `json:"currency,omitempty"`
-		PaidBy      string  `json:"paid_by,omitempty"`
+		PaidByID    int64   `json:"paid_by_id,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiResponse{Error: "invalid JSON"})
 		return
 	}
-	id, err := h.svc.CreateExpense(r.Context(), req.Amount, req.Category, req.Description, req.Date, req.Currency, req.PaidBy)
+	id, err := h.svc.CreateExpense(r.Context(), req.Amount, req.Category, req.Description, req.Date, req.Currency, req.PaidByID)
 	if err != nil {
 		if isValidationErr(err) {
 			writeJSON(w, http.StatusBadRequest, apiResponse{Error: err.Error()})
@@ -85,13 +85,13 @@ func (h *APIHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 		Description string  `json:"description,omitempty"`
 		Date        string  `json:"date,omitempty"`
 		Currency    string  `json:"currency,omitempty"`
-		PaidBy      string  `json:"paid_by,omitempty"`
+		PaidByID    int64   `json:"paid_by_id,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiResponse{Error: "invalid JSON"})
 		return
 	}
-	err := h.svc.UpdateExpense(r.Context(), id, req.Amount, req.Category, req.Description, req.Date, req.Currency, req.PaidBy)
+	err := h.svc.UpdateExpense(r.Context(), id, req.Amount, req.Category, req.Description, req.Date, req.Currency, req.PaidByID)
 	if err != nil {
 		if isValidationErr(err) {
 			writeJSON(w, http.StatusBadRequest, apiResponse{Error: err.Error()})

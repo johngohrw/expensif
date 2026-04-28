@@ -28,5 +28,5 @@ type Repository interface {
 	GetUser(ctx context.Context, id int64) (*domain.User, error)
 	UpdateUser(ctx context.Context, id int64, name string) error
 	DeleteUser(ctx context.Context, id int64) error
-	ClearExpensePaidBy(ctx context.Context, userName string) error
+	ClearExpensePaidBy(ctx context.Context, userID int64) error
 }

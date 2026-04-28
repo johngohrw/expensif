@@ -267,12 +267,12 @@ func (r *mockRepo) DeleteUser(_ context.Context, id int64) error {
 	return nil
 }
 
-func (r *mockRepo) ClearExpensePaidBy(_ context.Context, userName string) error {
+func (r *mockRepo) ClearExpensePaidBy(_ context.Context, userID int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i := range r.expenses {
-		if r.expenses[i].PaidBy == userName {
-			r.expenses[i].PaidBy = ""
+		if r.expenses[i].PaidByID == userID {
+			r.expenses[i].PaidByID = 0
 		}
 	}
 	return nil
