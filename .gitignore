@@ -18,9 +18,10 @@
 go.work
 
 # Build artifacts
+/server
+/expensif-test
 /expensif
 /expensif-test
-/server
 
 # IDE
 .idea/
@@ -39,4 +40,3 @@ Thumbs.db
 
 # Database (local SQLite)
 *.db
-server
