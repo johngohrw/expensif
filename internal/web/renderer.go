@@ -27,9 +27,10 @@ type PageData struct {
 	ConvertedTotal float64
 	RateDate       string
 	ShowConverted  bool
-	Name           string
+	UserID         int64
 	Users          []domain.User
 	User           *domain.User
+	PaidByID       int64
 }
 
 type Renderer struct {

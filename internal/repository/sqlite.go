@@ -184,21 +184,29 @@ func (r *sqliteRepo) TotalExpenses(ctx context.Context) (float64, error) {
 
 func (r *sqliteRepo) GetPreferences(ctx context.Context) (*domain.Preferences, error) {
 	var p domain.Preferences
-	err := r.db.QueryRowContext(ctx, `SELECT currency, name FROM preferences WHERE id = 1`).Scan(&p.Currency, &p.Name)
+	var userID sql.NullInt64
+	err := r.db.QueryRowContext(ctx, `SELECT currency, user_id FROM preferences WHERE id = 1`).Scan(&p.Currency, &userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
 		}
 		return nil, fmt.Errorf("get preferences: %w", err)
 	}
+	if userID.Valid {
+		p.UserID = userID.Int64
+	}
 	return &p, nil
 }
 
 func (r *sqliteRepo) SavePreferences(ctx context.Context, p domain.Preferences) error {
+	var userID interface{}
+	if p.UserID != 0 {
+		userID = p.UserID
+	}
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO preferences (id, currency, name) VALUES (1, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET currency = excluded.currency, name = excluded.name
-	`, p.Currency, p.Name)
+		INSERT INTO preferences (id, currency, user_id) VALUES (1, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET currency = excluded.currency, user_id = excluded.user_id
+	`, p.Currency, userID)
 	if err != nil {
 		return fmt.Errorf("save preferences: %w", err)
 	}

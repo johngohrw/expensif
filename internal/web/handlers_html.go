@@ -30,7 +30,7 @@ func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData 
 		Active:         active,
 		CurrencySymbol: domain.CurrencySymbol(prefs.Currency),
 		Currency:       prefs.Currency,
-		Name:           prefs.Name,
+		UserID:         prefs.UserID,
 		Today:          time.Now().Format("2006-01-02"),
 	}
 }
@@ -131,8 +131,13 @@ func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "add")
 	data.Today = date
-	users, _ := h.svc.ListUsers(ctx)
+	users, err := h.svc.ListUsers(ctx)
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+	}
 	data.Users = users
+	// Pre-select current user from preferences
+	data.PaidByID = data.UserID
 	h.render(w, "add", data)
 }
 
@@ -178,7 +183,10 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "edit")
 	data.Expense = expense
-	users, _ := h.svc.ListUsers(ctx)
+	users, err := h.svc.ListUsers(ctx)
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+	}
 	data.Users = users
 	h.render(w, "edit", data)
 }
@@ -241,9 +249,9 @@ func (h *HTMLHandler) HandleSavePreferences(w http.ResponseWriter, r *http.Reque
 	if currency == "" {
 		currency = "USD"
 	}
-	name := r.FormValue("name")
+	userID, _ := strconv.ParseInt(r.FormValue("user_id"), 10, 64)
 
-	if err := h.svc.SavePreferences(ctx, currency, name); err != nil {
+	if err := h.svc.SavePreferences(ctx, currency, userID); err != nil {
 		data := h.basePageData(ctx, "prefs")
 		data.Flash = "Failed to save preferences"
 		data.FlashError = true

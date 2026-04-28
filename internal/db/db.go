@@ -115,7 +115,7 @@ func migrate(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS preferences (
 		id INTEGER PRIMARY KEY CHECK (id = 1),
 		currency TEXT DEFAULT 'USD',
-		name TEXT
+		user_id INTEGER
 	);
 	INSERT OR IGNORE INTO preferences (id, currency) VALUES (1, 'USD');
 	`
@@ -123,12 +123,12 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 
-	var hasName int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('preferences') WHERE name = 'name'`).Scan(&hasName); err != nil {
+	var hasUserID int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('preferences') WHERE name = 'user_id'`).Scan(&hasUserID); err != nil {
 		return err
 	}
-	if hasName == 0 {
-		if _, err := db.Exec(`ALTER TABLE preferences ADD COLUMN name TEXT`); err != nil {
+	if hasUserID == 0 {
+		if _, err := db.Exec(`ALTER TABLE preferences ADD COLUMN user_id INTEGER`); err != nil {
 			return err
 		}
 	}

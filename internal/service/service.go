@@ -176,16 +176,13 @@ func (s *Service) Preferences(ctx context.Context) (*domain.Preferences, error) 
 	return p, nil
 }
 
-func (s *Service) SavePreferences(ctx context.Context, currency, name string) error {
+func (s *Service) SavePreferences(ctx context.Context, currency string, userID int64) error {
 	if currency == "" {
 		currency = "USD"
 	}
-	if err := s.repo.SaveUser(ctx, name); err != nil {
-		return err
-	}
 	return s.repo.SavePreferences(ctx, domain.Preferences{
 		Currency: currency,
-		Name:     name,
+		UserID:   userID,
 	})
 }
 
