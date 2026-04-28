@@ -264,14 +264,8 @@ func (r *mockRepo) DeleteUser(_ context.Context, id int64) error {
 		return fmt.Errorf("no user with id %d", id)
 	}
 	delete(r.users, id)
-	return nil
-}
-
-func (r *mockRepo) ClearExpensePaidBy(_ context.Context, userID int64) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	for i := range r.expenses {
-		if r.expenses[i].PaidByID == userID {
+		if r.expenses[i].PaidByID == id {
 			r.expenses[i].PaidByID = 0
 		}
 	}

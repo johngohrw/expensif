@@ -211,13 +211,7 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name string) error {
 }
 
 func (s *Service) DeleteUser(ctx context.Context, id int64) error {
-	if err := s.repo.DeleteUser(ctx, id); err != nil {
-		return err
-	}
-	if err := s.repo.ClearExpensePaidBy(ctx, id); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.DeleteUser(ctx, id)
 }
 
 // --- Exchange Rates ---

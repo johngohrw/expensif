@@ -59,7 +59,7 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 		if paidBy.Valid {
 			e.PaidByID = paidBy.Int64
 		}
-		e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+		e.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 		expenses = append(expenses, e)
 	}
 	return expenses, rows.Err()
@@ -81,7 +81,7 @@ func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense,
 	if paidBy.Valid {
 		e.PaidByID = paidBy.Int64
 	}
-	e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+	e.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 	return &e, nil
 }
 
@@ -278,7 +278,13 @@ func (r *sqliteRepo) UpdateUser(ctx context.Context, id int64, name string) erro
 }
 
 func (r *sqliteRepo) DeleteUser(ctx context.Context, id int64) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
 	if err != nil {
 		return err
 	}
@@ -289,12 +295,12 @@ func (r *sqliteRepo) DeleteUser(ctx context.Context, id int64) error {
 	if n == 0 {
 		return fmt.Errorf("no user with id %d", id)
 	}
-	return nil
-}
 
-func (r *sqliteRepo) ClearExpensePaidBy(ctx context.Context, userID int64) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE expenses SET paid_by = NULL WHERE paid_by = ?`, userID)
-	return err
+	if _, err := tx.ExecContext(ctx, `UPDATE expenses SET paid_by = NULL WHERE paid_by = ?`, id); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // --- Exchange Rates ---
