@@ -10,11 +10,45 @@
 </head>
 <body class="bg-gray-50 text-gray-800">
 <div class="max-w-3xl mx-auto px-4 py-8">
-  <nav class="flex gap-6 mb-8 pb-4 border-b border-gray-200">
+  <nav class="flex items-center gap-6 mb-8 pb-4 border-b border-gray-200">
     <a href="/" class="font-semibold {{if eq .Active "list"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}}">Expenses</a>
     <a href="/daily" class="font-semibold {{if eq .Active "daily"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}}">Daily View</a>
-    <a href="/expenses/new" class="font-semibold {{if eq .Active "add"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}}">+ New Expense</a>
-    <a href="/preferences" class="font-semibold {{if eq .Active "prefs"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}} ml-auto">Preferences</a>
+    <a href="/expenses/new" class="inline-flex items-center gap-1.5 ml-auto px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition shadow-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      New Expense
+    </a>
+    <div class="relative" id="nav-menu">
+      <button type="button" class="p-1 rounded hover:bg-gray-100 focus:outline-none" aria-label="Menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
+      </button>
+      <div class="hidden absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50" id="nav-dropdown">
+        <a href="/preferences" class="block px-4 py-2 text-sm font-semibold {{if eq .Active "prefs"}}text-gray-900 bg-gray-50{{else}}text-gray-700 hover:bg-gray-50{{end}}">Preferences</a>
+      </div>
+    </div>
+    <script>
+      (function(){
+        var menu = document.getElementById('nav-menu');
+        var btn = menu.querySelector('button');
+        var dropdown = document.getElementById('nav-dropdown');
+        var open = false;
+        function toggle(e) {
+          e.stopPropagation();
+          open = !open;
+          dropdown.classList.toggle('hidden', !open);
+        }
+        btn.addEventListener('click', toggle);
+        document.addEventListener('click', function(e) {
+          if (open && !menu.contains(e.target)) {
+            open = false;
+            dropdown.classList.add('hidden');
+          }
+        });
+      })();
+    </script>
   </nav>
   {{if .Flash}}
   <div class="mb-6 px-4 py-3 rounded-lg {{if .FlashError}}bg-red-100 text-red-800{{else}}bg-green-100 text-green-800{{end}}">
