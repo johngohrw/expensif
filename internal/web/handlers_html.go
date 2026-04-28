@@ -131,7 +131,10 @@ func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "add")
 	data.Today = date
-	users, _ := h.svc.ListUsers(ctx)
+	users, err := h.svc.ListUsers(ctx)
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+	}
 	data.Users = users
 	// Pre-select current user from preferences
 	data.PaidByID = data.UserID
@@ -180,7 +183,10 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "edit")
 	data.Expense = expense
-	users, _ := h.svc.ListUsers(ctx)
+	users, err := h.svc.ListUsers(ctx)
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+	}
 	data.Users = users
 	h.render(w, "edit", data)
 }
