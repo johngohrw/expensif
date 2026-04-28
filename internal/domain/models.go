@@ -17,7 +17,7 @@ type Expense struct {
 
 type Preferences struct {
 	Currency string
-	Name     string
+	UserID   int64
 }
 
 type User struct {
