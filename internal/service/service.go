@@ -32,7 +32,7 @@ func New(repo repository.Repository) *Service {
 
 // --- Expenses ---
 
-func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency string) (int64, error) {
+func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency, paidBy string) (int64, error) {
 	if amount <= 0 {
 		return 0, ErrInvalidAmount
 	}
@@ -56,6 +56,7 @@ func (s *Service) CreateExpense(ctx context.Context, amount float64, category, d
 		Description: description,
 		Date:        date,
 		Currency:    currency,
+		PaidBy:      paidBy,
 	}
 	return s.repo.CreateExpense(ctx, e)
 }
@@ -71,7 +72,7 @@ func (s *Service) GetExpense(ctx context.Context, id int64) (*domain.Expense, er
 	return s.repo.GetExpense(ctx, id)
 }
 
-func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency string) error {
+func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency, paidBy string) error {
 	if amount <= 0 {
 		return ErrInvalidAmount
 	}
@@ -96,6 +97,7 @@ func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, c
 		Description: description,
 		Date:        date,
 		Currency:    currency,
+		PaidBy:      paidBy,
 	}
 	return s.repo.UpdateExpense(ctx, e)
 }
@@ -156,13 +158,57 @@ func (s *Service) Preferences(ctx context.Context) (*domain.Preferences, error) 
 	return p, nil
 }
 
-func (s *Service) SavePreferences(ctx context.Context, currency string) error {
+func (s *Service) SavePreferences(ctx context.Context, currency, name string) error {
 	if currency == "" {
 		currency = "USD"
 	}
+	if err := s.repo.SaveUser(ctx, name); err != nil {
+		return err
+	}
 	return s.repo.SavePreferences(ctx, domain.Preferences{
 		Currency: currency,
+		Name:     name,
 	})
+}
+
+func (s *Service) ListUsers(ctx context.Context) ([]domain.User, error) {
+	return s.repo.ListUsers(ctx)
+}
+
+func (s *Service) CreateUser(ctx context.Context, name string) (int64, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return 0, errors.New("name is required")
+	}
+	return s.repo.CreateUser(ctx, name)
+}
+
+func (s *Service) GetUser(ctx context.Context, id int64) (*domain.User, error) {
+	return s.repo.GetUser(ctx, id)
+}
+
+func (s *Service) UpdateUser(ctx context.Context, id int64, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return errors.New("name is required")
+	}
+	return s.repo.UpdateUser(ctx, id, name)
+}
+
+func (s *Service) DeleteUser(ctx context.Context, id int64) error {
+	user, err := s.repo.GetUser(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.DeleteUser(ctx, id); err != nil {
+		return err
+	}
+	if user.Name != "" {
+		if err := s.repo.ClearExpensePaidBy(ctx, user.Name); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // --- Exchange Rates ---

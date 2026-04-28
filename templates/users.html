@@ -1,0 +1,51 @@
+{{define "title"}}User Management{{end}}
+{{define "content"}}
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-xl font-bold text-gray-900">Users</h2>
+  <a href="/users/new" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition shadow-sm">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    New User
+  </a>
+</div>
+
+{{if .Users}}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">ID</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Users}}
+        <tr class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-500">{{.ID}}</td>
+          <td class="px-4 py-3 font-medium text-gray-900">{{.Name}}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2 justify-end">
+              <a href="/users/edit/{{.ID}}">
+                <button class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition">Edit</button>
+              </a>
+              <form method="POST" action="/users/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete user \u0022{{.Name}}\u0022?')">
+                <button type="submit" class="bg-red-50 text-red-600 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 transition">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{else}}
+<div class="text-center text-gray-400 py-16 bg-white rounded-xl border border-gray-200">
+  No users yet.
+  <a href="/users/new" class="text-blue-600 hover:underline ml-1">Add one</a>
+</div>
+{{end}}
+{{end}}

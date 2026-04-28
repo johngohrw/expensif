@@ -23,6 +23,7 @@
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Amount</th>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Category</th>
           <th class="text-left px-4 py-3 font-semibold text-gray-600">Description</th>
+          <th class="text-left px-4 py-3 font-semibold text-gray-600">Paid By</th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
@@ -38,6 +39,7 @@
           </td>
           <td class="px-4 py-3"><span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{{.Category}}</span></td>
           <td class="px-4 py-3 text-gray-600">{{if .Description}}{{.Description}}{{else}}-{{end}}</td>
+          <td class="px-4 py-3 text-gray-600">{{if .PaidBy}}{{.PaidBy}}{{else}}-{{end}}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2 justify-end">
               <a href="/expenses/edit/{{.ID}}">

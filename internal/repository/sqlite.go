@@ -25,8 +25,8 @@ func (r *sqliteRepo) CreateExpense(ctx context.Context, e domain.Expense) (int64
 		e.Currency = "USD"
 	}
 	res, err := r.db.ExecContext(ctx,
-		`INSERT INTO expenses (amount, category, description, date, currency) VALUES (?, ?, ?, ?, ?)`,
-		e.Amount, e.Category, e.Description, e.Date, e.Currency,
+		`INSERT INTO expenses (amount, category, description, date, currency, paid_by) VALUES (?, ?, ?, ?, ?, ?)`,
+		e.Amount, e.Category, e.Description, e.Date, e.Currency, e.PaidBy,
 	)
 	if err != nil {
 		return 0, err
@@ -36,7 +36,7 @@ func (r *sqliteRepo) CreateExpense(ctx context.Context, e domain.Expense) (int64
 
 func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expense, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, amount, category, description, date, currency, created_at FROM expenses ORDER BY date DESC, created_at DESC LIMIT ?`,
+		`SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses ORDER BY date DESC, created_at DESC LIMIT ?`,
 		limit,
 	)
 	if err != nil {
@@ -48,9 +48,11 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 	for rows.Next() {
 		var e domain.Expense
 		var createdAt string
-		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &createdAt); err != nil {
+		var paidBy sql.NullString
+		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt); err != nil {
 			return nil, err
 		}
+		e.PaidBy = paidBy.String
 		e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		expenses = append(expenses, e)
 	}
@@ -60,15 +62,17 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense, error) {
 	var e domain.Expense
 	var createdAt string
+	var paidBy sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, amount, category, description, date, currency, created_at FROM expenses WHERE id = ?`, id,
-	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &createdAt)
+		`SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses WHERE id = ?`, id,
+	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("no expense with id %d", id)
 	}
 	if err != nil {
 		return nil, err
 	}
+	e.PaidBy = paidBy.String
 	e.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	return &e, nil
 }
@@ -81,8 +85,8 @@ func (r *sqliteRepo) UpdateExpense(ctx context.Context, e domain.Expense) error 
 		e.Currency = "USD"
 	}
 	res, err := r.db.ExecContext(ctx,
-		`UPDATE expenses SET amount = ?, category = ?, description = ?, date = ?, currency = ? WHERE id = ?`,
-		e.Amount, e.Category, e.Description, e.Date, e.Currency, e.ID,
+		`UPDATE expenses SET amount = ?, category = ?, description = ?, date = ?, currency = ?, paid_by = ? WHERE id = ?`,
+		e.Amount, e.Category, e.Description, e.Date, e.Currency, e.PaidBy, e.ID,
 	)
 	if err != nil {
 		return err
@@ -168,7 +172,7 @@ func (r *sqliteRepo) TotalExpenses(ctx context.Context) (float64, error) {
 
 func (r *sqliteRepo) GetPreferences(ctx context.Context) (*domain.Preferences, error) {
 	var p domain.Preferences
-	err := r.db.QueryRowContext(ctx, `SELECT currency FROM preferences WHERE id = 1`).Scan(&p.Currency)
+	err := r.db.QueryRowContext(ctx, `SELECT currency, name FROM preferences WHERE id = 1`).Scan(&p.Currency, &p.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, err
@@ -180,13 +184,97 @@ func (r *sqliteRepo) GetPreferences(ctx context.Context) (*domain.Preferences, e
 
 func (r *sqliteRepo) SavePreferences(ctx context.Context, p domain.Preferences) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO preferences (id, currency) VALUES (1, ?)
-		ON CONFLICT(id) DO UPDATE SET currency = excluded.currency
-	`, p.Currency)
+		INSERT INTO preferences (id, currency, name) VALUES (1, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET currency = excluded.currency, name = excluded.name
+	`, p.Currency, p.Name)
 	if err != nil {
 		return fmt.Errorf("save preferences: %w", err)
 	}
 	return nil
+}
+
+func (r *sqliteRepo) ListUsers(ctx context.Context) ([]domain.User, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id, name FROM users ORDER BY name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var u domain.User
+		if err := rows.Scan(&u.ID, &u.Name); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, rows.Err()
+}
+
+func (r *sqliteRepo) SaveUser(ctx context.Context, name string) error {
+	if name == "" {
+		return nil
+	}
+	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO users (name) VALUES (?)`, name)
+	if err != nil {
+		return fmt.Errorf("save user: %w", err)
+	}
+	return nil
+}
+
+func (r *sqliteRepo) CreateUser(ctx context.Context, name string) (int64, error) {
+	res, err := r.db.ExecContext(ctx, `INSERT INTO users (name) VALUES (?)`, name)
+	if err != nil {
+		return 0, fmt.Errorf("create user: %w", err)
+	}
+	return res.LastInsertId()
+}
+
+func (r *sqliteRepo) GetUser(ctx context.Context, id int64) (*domain.User, error) {
+	var u domain.User
+	err := r.db.QueryRowContext(ctx, `SELECT id, name FROM users WHERE id = ?`, id).Scan(&u.ID, &u.Name)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("no user with id %d", id)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (r *sqliteRepo) UpdateUser(ctx context.Context, id int64, name string) error {
+	res, err := r.db.ExecContext(ctx, `UPDATE users SET name = ? WHERE id = ?`, name, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("no user with id %d", id)
+	}
+	return nil
+}
+
+func (r *sqliteRepo) DeleteUser(ctx context.Context, id int64) error {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("no user with id %d", id)
+	}
+	return nil
+}
+
+func (r *sqliteRepo) ClearExpensePaidBy(ctx context.Context, userName string) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE expenses SET paid_by = NULL WHERE paid_by = ?`, userName)
+	return err
 }
 
 // --- Exchange Rates ---

@@ -39,3 +39,4 @@ Thumbs.db
 
 # Database (local SQLite)
 *.db
+server

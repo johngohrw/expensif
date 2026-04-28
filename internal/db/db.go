@@ -73,14 +73,45 @@ func migrate(db *sql.DB) error {
 		}
 	}
 
+	var hasPaidBy int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('expenses') WHERE name = 'paid_by'`).Scan(&hasPaidBy); err != nil {
+		return err
+	}
+	if hasPaidBy == 0 {
+		if _, err := db.Exec(`ALTER TABLE expenses ADD COLUMN paid_by TEXT`); err != nil {
+			return err
+		}
+	}
+
 	prefsSchema := `
 	CREATE TABLE IF NOT EXISTS preferences (
 		id INTEGER PRIMARY KEY CHECK (id = 1),
-		currency TEXT DEFAULT 'USD'
+		currency TEXT DEFAULT 'USD',
+		name TEXT
 	);
 	INSERT OR IGNORE INTO preferences (id, currency) VALUES (1, 'USD');
 	`
 	if _, err := db.Exec(prefsSchema); err != nil {
+		return err
+	}
+
+	var hasName int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('preferences') WHERE name = 'name'`).Scan(&hasName); err != nil {
+		return err
+	}
+	if hasName == 0 {
+		if _, err := db.Exec(`ALTER TABLE preferences ADD COLUMN name TEXT`); err != nil {
+			return err
+		}
+	}
+
+	usersSchema := `
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE
+	);
+	`
+	if _, err := db.Exec(usersSchema); err != nil {
 		return err
 	}
 

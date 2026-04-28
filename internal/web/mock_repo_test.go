@@ -3,13 +3,13 @@ package web
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
 	"time"
 
 	"expensif/internal/domain"
+	"expensif/internal/repository"
 )
 
 // mockRepo is an in-memory implementation of repository.Repository for testing.
@@ -20,15 +20,19 @@ type mockRepo struct {
 	prefs     domain.Preferences
 	rates     map[string]map[string]float64 // base -> target -> rate
 	rateDates map[string]string             // base -> date
+	users     map[int64]string
+	nextUserID int64
 }
 
 func newMockRepo() *mockRepo {
 	return &mockRepo{
-		expenses:  make([]domain.Expense, 0),
-		nextID:    1,
-		prefs:     domain.Preferences{Currency: "USD"},
-		rates:     make(map[string]map[string]float64),
-		rateDates: make(map[string]string),
+		expenses:   make([]domain.Expense, 0),
+		nextID:     1,
+		prefs:      domain.Preferences{Currency: "USD"},
+		rates:      make(map[string]map[string]float64),
+		rateDates:  make(map[string]string),
+		users:      make(map[int64]string),
+		nextUserID: 1,
 	}
 }
 
@@ -189,6 +193,91 @@ func (r *mockRepo) GetLatestRates(_ context.Context, base string) (map[string]fl
 	return nil, "", sql.ErrNoRows
 }
 
+func (r *mockRepo) ListUsers(_ context.Context) ([]domain.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var users []domain.User
+	for id, name := range r.users {
+		users = append(users, domain.User{ID: id, Name: name})
+	}
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].Name < users[j].Name
+	})
+	return users, nil
+}
+
+func (r *mockRepo) SaveUser(_ context.Context, name string) error {
+	if name == "" {
+		return nil
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	// dedup check
+	for _, n := range r.users {
+		if n == name {
+			return nil
+		}
+	}
+	r.users[r.nextUserID] = name
+	r.nextUserID++
+	return nil
+}
+
+func (r *mockRepo) CreateUser(_ context.Context, name string) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	// dedup check
+	for _, n := range r.users {
+		if n == name {
+			return 0, fmt.Errorf("user already exists")
+		}
+	}
+	id := r.nextUserID
+	r.users[id] = name
+	r.nextUserID++
+	return id, nil
+}
+
+func (r *mockRepo) GetUser(_ context.Context, id int64) (*domain.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if name, ok := r.users[id]; ok {
+		return &domain.User{ID: id, Name: name}, nil
+	}
+	return nil, fmt.Errorf("no user with id %d", id)
+}
+
+func (r *mockRepo) UpdateUser(_ context.Context, id int64, name string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.users[id]; !ok {
+		return fmt.Errorf("no user with id %d", id)
+	}
+	r.users[id] = name
+	return nil
+}
+
+func (r *mockRepo) DeleteUser(_ context.Context, id int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.users[id]; !ok {
+		return fmt.Errorf("no user with id %d", id)
+	}
+	delete(r.users, id)
+	return nil
+}
+
+func (r *mockRepo) ClearExpensePaidBy(_ context.Context, userName string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.expenses {
+		if r.expenses[i].PaidBy == userName {
+			r.expenses[i].PaidBy = ""
+		}
+	}
+	return nil
+}
+
 // seed adds a few expenses for testing convenience.
 func (r *mockRepo) seed() {
 	now := time.Now().Format("2006-01-02")
@@ -198,4 +287,4 @@ func (r *mockRepo) seed() {
 }
 
 // ensure mockRepo implements the interface at compile time.
-var _ = errors.New
+var _ repository.Repository = (*mockRepo)(nil)

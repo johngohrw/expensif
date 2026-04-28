@@ -30,6 +30,7 @@ func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData 
 		Active:         active,
 		CurrencySymbol: domain.CurrencySymbol(prefs.Currency),
 		Currency:       prefs.Currency,
+		Name:           prefs.Name,
 		Today:          time.Now().Format("2006-01-02"),
 	}
 }
@@ -119,6 +120,8 @@ func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "add")
 	data.Today = date
+	users, _ := h.svc.ListUsers(ctx)
+	data.Users = users
 	h.render(w, "add", data)
 }
 
@@ -133,13 +136,16 @@ func (h *HTMLHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 	category := r.FormValue("category")
 	description := r.FormValue("description")
 	currency := r.FormValue("currency")
+	paidBy := r.FormValue("paid_by")
 
-	_, err := h.svc.CreateExpense(ctx, amount, category, description, date, currency)
+	_, err := h.svc.CreateExpense(ctx, amount, category, description, date, currency, paidBy)
 	if err != nil {
 		data := h.basePageData(ctx, "add")
 		data.Flash = err.Error()
 		data.FlashError = true
 		data.Today = date
+		users, _ := h.svc.ListUsers(ctx)
+		data.Users = users
 		h.render(w, "add", data)
 		return
 	}
@@ -161,6 +167,8 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "edit")
 	data.Expense = expense
+	users, _ := h.svc.ListUsers(ctx)
+	data.Users = users
 	h.render(w, "edit", data)
 }
 
@@ -176,14 +184,17 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 	category := r.FormValue("category")
 	description := r.FormValue("description")
 	currency := r.FormValue("currency")
+	paidBy := r.FormValue("paid_by")
 
-	err := h.svc.UpdateExpense(ctx, id, amount, category, description, date, currency)
+	err := h.svc.UpdateExpense(ctx, id, amount, category, description, date, currency, paidBy)
 	if err != nil {
 		expense, _ := h.svc.GetExpense(ctx, id)
 		data := h.basePageData(ctx, "edit")
 		data.Expense = expense
 		data.Flash = err.Error()
 		data.FlashError = true
+		users, _ := h.svc.ListUsers(ctx)
+		data.Users = users
 		h.render(w, "edit", data)
 		return
 	}
@@ -204,6 +215,8 @@ func (h *HTMLHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 func (h *HTMLHandler) HandlePreferences(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := h.basePageData(ctx, "prefs")
+	users, _ := h.svc.ListUsers(ctx)
+	data.Users = users
 	h.render(w, "prefs", data)
 }
 
@@ -217,8 +230,9 @@ func (h *HTMLHandler) HandleSavePreferences(w http.ResponseWriter, r *http.Reque
 	if currency == "" {
 		currency = "USD"
 	}
+	name := r.FormValue("name")
 
-	if err := h.svc.SavePreferences(ctx, currency); err != nil {
+	if err := h.svc.SavePreferences(ctx, currency, name); err != nil {
 		data := h.basePageData(ctx, "prefs")
 		data.Flash = "Failed to save preferences"
 		data.FlashError = true
@@ -229,4 +243,86 @@ func (h *HTMLHandler) HandleSavePreferences(w http.ResponseWriter, r *http.Reque
 	data := h.basePageData(ctx, "prefs")
 	data.Flash = "Preferences saved"
 	h.render(w, "prefs", data)
+}
+
+// --- User Management ---
+
+func (h *HTMLHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	users, err := h.svc.ListUsers(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data := h.basePageData(ctx, "users")
+	data.Users = users
+	h.render(w, "users", data)
+}
+
+func (h *HTMLHandler) HandleUserNew(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	data := h.basePageData(ctx, "users")
+	h.render(w, "user_form", data)
+}
+
+func (h *HTMLHandler) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	name := r.FormValue("name")
+	_, err := h.svc.CreateUser(ctx, name)
+	if err != nil {
+		data := h.basePageData(ctx, "users")
+		data.Flash = err.Error()
+		data.FlashError = true
+		h.render(w, "user_form", data)
+		return
+	}
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
+}
+
+func (h *HTMLHandler) HandleUserEdit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	user, err := h.svc.GetUser(ctx, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	data := h.basePageData(ctx, "users")
+	data.User = user
+	h.render(w, "user_form", data)
+}
+
+func (h *HTMLHandler) HandleUserUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	name := r.FormValue("name")
+	err := h.svc.UpdateUser(ctx, id, name)
+	if err != nil {
+		user, _ := h.svc.GetUser(ctx, id)
+		data := h.basePageData(ctx, "users")
+		data.User = user
+		data.Flash = err.Error()
+		data.FlashError = true
+		h.render(w, "user_form", data)
+		return
+	}
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
+}
+
+func (h *HTMLHandler) HandleUserDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	id, _ := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err := h.svc.DeleteUser(ctx, id); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }

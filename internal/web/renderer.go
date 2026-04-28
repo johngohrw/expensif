@@ -27,6 +27,9 @@ type PageData struct {
 	ConvertedTotal float64
 	RateDate       string
 	ShowConverted  bool
+	Name           string
+	Users          []domain.User
+	User           *domain.User
 }
 
 type Renderer struct {
@@ -76,11 +79,13 @@ func NewRenderer(templatesDir string) (*Renderer, error) {
 	}
 
 	templates := map[string]*template.Template{
-		"list":  parsePage(filepath.Join(templatesDir, "list.html")),
-		"daily": parsePage(filepath.Join(templatesDir, "daily.html")),
-		"add":   parsePage(filepath.Join(templatesDir, "form.html"), filepath.Join(templatesDir, "add.html")),
-		"edit":  parsePage(filepath.Join(templatesDir, "form.html"), filepath.Join(templatesDir, "edit.html")),
-		"prefs": parsePage(filepath.Join(templatesDir, "preferences.html")),
+		"list":      parsePage(filepath.Join(templatesDir, "list.html")),
+		"daily":     parsePage(filepath.Join(templatesDir, "daily.html")),
+		"add":       parsePage(filepath.Join(templatesDir, "form.html"), filepath.Join(templatesDir, "add.html")),
+		"edit":      parsePage(filepath.Join(templatesDir, "form.html"), filepath.Join(templatesDir, "edit.html")),
+		"prefs":     parsePage(filepath.Join(templatesDir, "preferences.html")),
+		"users":     parsePage(filepath.Join(templatesDir, "users.html")),
+		"user_form": parsePage(filepath.Join(templatesDir, "user_form.html")),
 	}
 
 	return &Renderer{templates: templates}, nil

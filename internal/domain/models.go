@@ -9,12 +9,19 @@ type Expense struct {
 	Description     string
 	Date            string // YYYY-MM-DD
 	Currency        string
+	PaidBy          string
 	CreatedAt       time.Time
 	ConvertedAmount float64 `json:"-"` // computed at render time
 }
 
 type Preferences struct {
 	Currency string
+	Name     string
+}
+
+type User struct {
+	ID   int64
+	Name string
 }
 
 type CategorySummary struct {

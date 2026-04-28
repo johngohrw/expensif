@@ -25,6 +25,13 @@ func NewServer(api *APIHandler, html *HTMLHandler) *Server {
 	mux.HandleFunc("POST /expenses/edit/{id}", html.HandleUpdate)
 	mux.HandleFunc("POST /expenses/delete/{id}", html.HandleDelete)
 
+	mux.HandleFunc("GET /users", html.HandleUsers)
+	mux.HandleFunc("GET /users/new", html.HandleUserNew)
+	mux.HandleFunc("POST /users/new", html.HandleUserCreate)
+	mux.HandleFunc("GET /users/edit/{id}", html.HandleUserEdit)
+	mux.HandleFunc("POST /users/edit/{id}", html.HandleUserUpdate)
+	mux.HandleFunc("POST /users/delete/{id}", html.HandleUserDelete)
+
 	// JSON API routes
 	mux.HandleFunc("GET /api/expenses", api.HandleList)
 	mux.HandleFunc("POST /api/expenses", api.HandleCreate)
