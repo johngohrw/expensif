@@ -70,9 +70,6 @@ func (h *HTMLHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.svc.HydratePaidByNames(ctx, expenses); err != nil {
-		slog.Error("hydrate paid_by names failed", "error", err)
-	}
 	data.Expenses = expenses
 
 	var categories []domain.CategorySummary
@@ -109,13 +106,6 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			groups[i].ConvertedTotal = convTotal
-		}
-	}
-
-	for i := range groups {
-		if err := h.svc.HydratePaidByNames(ctx, groups[i].Expenses); err != nil {
-			slog.Error("hydrate paid_by names failed", "error", err)
-			break
 		}
 	}
 

@@ -60,6 +60,13 @@ func (r *mockRepo) ListExpenses(_ context.Context, limit int) ([]domain.Expense,
 	}
 	result := make([]domain.Expense, limit)
 	copy(result, r.expenses[:limit])
+	for i := range result {
+		if result[i].PaidByID != 0 {
+			if name, ok := r.users[result[i].PaidByID]; ok {
+				result[i].PaidByName = name
+			}
+		}
+	}
 	return result, nil
 }
 
@@ -69,6 +76,11 @@ func (r *mockRepo) GetExpense(_ context.Context, id int64) (*domain.Expense, err
 	for i := range r.expenses {
 		if r.expenses[i].ID == id {
 			e := r.expenses[i]
+			if e.PaidByID != 0 {
+				if name, ok := r.users[e.PaidByID]; ok {
+					e.PaidByName = name
+				}
+			}
 			return &e, nil
 		}
 	}

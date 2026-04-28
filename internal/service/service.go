@@ -106,24 +106,6 @@ func (s *Service) DeleteExpense(ctx context.Context, id int64) error {
 	return s.repo.DeleteExpense(ctx, id)
 }
 
-// HydratePaidByNames populates PaidByName on each expense by looking up user IDs.
-func (s *Service) HydratePaidByNames(ctx context.Context, expenses []domain.Expense) error {
-	users, err := s.repo.ListUsers(ctx)
-	if err != nil {
-		return err
-	}
-	nameMap := make(map[int64]string, len(users))
-	for _, u := range users {
-		nameMap[u.ID] = u.Name
-	}
-	for i := range expenses {
-		if expenses[i].PaidByID != 0 {
-			expenses[i].PaidByName = nameMap[expenses[i].PaidByID]
-		}
-	}
-	return nil
-}
-
 func (s *Service) ListCategories(ctx context.Context) ([]string, error) {
 	return s.repo.ListCategories(ctx)
 }

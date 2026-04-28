@@ -40,7 +40,10 @@ func (r *sqliteRepo) CreateExpense(ctx context.Context, e domain.Expense) (int64
 
 func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expense, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses ORDER BY date DESC, created_at DESC LIMIT ?`,
+		`SELECT e.id, e.amount, e.category, e.description, e.date, e.currency, e.paid_by, u.name, e.created_at
+		 FROM expenses e
+		 LEFT JOIN users u ON e.paid_by = u.id
+		 ORDER BY e.date DESC, e.created_at DESC LIMIT ?`,
 		limit,
 	)
 	if err != nil {
@@ -53,11 +56,15 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 		var e domain.Expense
 		var createdAt string
 		var paidBy sql.NullInt64
-		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt); err != nil {
+		var paidByName sql.NullString
+		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &paidByName, &createdAt); err != nil {
 			return nil, err
 		}
 		if paidBy.Valid {
 			e.PaidByID = paidBy.Int64
+		}
+		if paidByName.Valid {
+			e.PaidByName = paidByName.String
 		}
 		e.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 		expenses = append(expenses, e)
@@ -69,9 +76,13 @@ func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense,
 	var e domain.Expense
 	var createdAt string
 	var paidBy sql.NullInt64
+	var paidByName sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses WHERE id = ?`, id,
-	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &createdAt)
+		`SELECT e.id, e.amount, e.category, e.description, e.date, e.currency, e.paid_by, u.name, e.created_at
+		 FROM expenses e
+		 LEFT JOIN users u ON e.paid_by = u.id
+		 WHERE e.id = ?`, id,
+	).Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &paidByName, &createdAt)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("no expense with id %d", id)
 	}
@@ -80,6 +91,9 @@ func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense,
 	}
 	if paidBy.Valid {
 		e.PaidByID = paidBy.Int64
+	}
+	if paidByName.Valid {
+		e.PaidByName = paidByName.String
 	}
 	e.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 	return &e, nil
