@@ -4,7 +4,10 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"expensif/internal/db"
@@ -25,16 +28,22 @@ func main() {
 	repo := repository.NewSQLite(database)
 	svc := service.New(repo)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// Background rate refresh: fetch immediately, then every 6 hours
 	go func() {
-		ctx := context.Background()
 		for {
 			if err := svc.RefreshRates(ctx); err != nil {
 				slog.Error("rate refresh failed", "error", err)
 			} else {
 				slog.Info("exchange rates refreshed")
 			}
-			time.Sleep(6 * time.Hour)
+			select {
+			case <-time.After(6 * time.Hour):
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 
@@ -45,9 +54,33 @@ func main() {
 
 	apiHandler := web.NewAPIHandler(svc)
 	htmlHandler := web.NewHTMLHandler(svc, renderer)
-	server := web.NewServer(apiHandler, htmlHandler)
+	port := os.Getenv("PORT")
+	server := web.NewServer(apiHandler, htmlHandler, port)
 
-	if err := server.Run(); err != nil {
+	srvErr := make(chan error, 1)
+	go func() {
+		if err := server.Run(); err != nil && err != http.ErrServerClosed {
+			srvErr <- err
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case <-quit:
+		slog.Info("shutting down server...")
+	case err := <-srvErr:
 		log.Fatalf("server error: %v", err)
 	}
+
+	cancel() // stop background goroutine
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("server shutdown failed: %v", err)
+	}
+	slog.Info("server stopped")
 }

@@ -1,17 +1,17 @@
 package web
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 )
 
 type Server struct {
-	mux *http.ServeMux
+	srv *http.Server
 }
 
-func NewServer(api *APIHandler, html *HTMLHandler) *Server {
+func NewServer(api *APIHandler, html *HTMLHandler, port string) *Server {
 	mux := http.NewServeMux()
 
 	// HTML routes
@@ -41,15 +41,23 @@ func NewServer(api *APIHandler, html *HTMLHandler) *Server {
 	mux.HandleFunc("GET /api/categories", api.HandleCategories)
 	mux.HandleFunc("GET /api/summary", api.HandleSummary)
 
-	return &Server{mux: mux}
-}
-
-func (s *Server) Run() error {
-	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	slog.Info("server running", "url", fmt.Sprintf("http://localhost:%s", port))
-	handler := RecoverPanic(RequestLog(s.mux))
-	return http.ListenAndServe(":"+port, handler)
+	handler := RecoverPanic(RequestLog(mux))
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: handler,
+	}
+
+	return &Server{srv: srv}
+}
+
+func (s *Server) Run() error {
+	slog.Info("server running", "url", fmt.Sprintf("http://localhost%s", s.srv.Addr))
+	return s.srv.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.srv.Shutdown(ctx)
 }

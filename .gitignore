@@ -21,7 +21,6 @@ go.work
 /server
 /expensif-test
 /expensif
-/expensif-test
 
 # IDE
 .idea/
