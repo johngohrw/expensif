@@ -50,5 +50,6 @@ func (s *Server) Run() error {
 		port = "8080"
 	}
 	slog.Info("server running", "url", fmt.Sprintf("http://localhost:%s", port))
-	return http.ListenAndServe(":"+port, s.mux)
+	handler := RecoverPanic(RequestLog(s.mux))
+	return http.ListenAndServe(":"+port, handler)
 }
