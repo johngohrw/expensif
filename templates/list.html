@@ -42,11 +42,9 @@
           <td class="px-4 py-3 text-gray-600">{{if .PaidByName}}{{.PaidByName}}{{else}}-{{end}}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2 justify-end">
-              <a href="/expenses/edit/{{.ID}}">
-                <button class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition">Edit</button>
-              </a>
+              {{template "button" dict "variant" "neutral" "size" "sm" "href" (print "/expenses/edit/" .ID) "text" "Edit"}}
               <form method="POST" action="/expenses/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete expense #{{.ID}}?')">
-                <button type="submit" class="bg-red-50 text-red-600 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 transition">Delete</button>
+                {{template "button" dict "variant" "danger" "size" "sm" "type" "submit" "text" "Delete"}}
               </form>
             </div>
           </td>

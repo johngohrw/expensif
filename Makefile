@@ -1,9 +1,11 @@
 .PHONY: dev build-ui build-server prod run
 
-# Development: start both servers (run in separate terminals)
+dev-install:
+	cd ui && npm install
+
+# Development: start both Go and Vite dev servers; kill both on Ctrl+C
 dev:
-	@echo "Start Go server:   DEV=true go run ./cmd/server"
-	@echo "Start Vite server: cd ui && npm run dev"
+	@bash -c 'trap "kill 0" INT; DEV=true go run ./cmd/server & cd ui && npm run dev & wait'
 
 # Build UI for production
 build-ui:

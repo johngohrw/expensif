@@ -44,12 +44,8 @@
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button type="submit" class="flex-1 bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 transition">
-        Save Preferences
-      </button>
-      <a href="/" class="flex-1 text-center bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-300 transition">
-        Cancel
-      </a>
+      {{template "button" dict "variant" "primary" "type" "submit" "text" "Save Preferences" "class" "flex-1"}}
+      {{template "button" dict "variant" "ghost" "href" "/" "text" "Cancel" "class" "flex-1 text-center"}}
     </div>
   </div>
 </form>

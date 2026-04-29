@@ -128,6 +128,7 @@ func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	data.Users = users
 	// Pre-select current user from preferences
 	data.PaidByID = data.UserID
+	data.Islands = []string{"category-pills"}
 	h.render(w, "add", data)
 }
 
@@ -152,6 +153,7 @@ func (h *HTMLHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		data.Today = date
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
+		data.Islands = []string{"category-pills"}
 		h.render(w, "add", data)
 		return
 	}
@@ -178,6 +180,7 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to list users", "error", err)
 	}
 	data.Users = users
+	data.Islands = []string{"category-pills"}
 	h.render(w, "edit", data)
 }
 
@@ -204,6 +207,7 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 		data.FlashError = true
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
+		data.Islands = []string{"category-pills"}
 		h.render(w, "edit", data)
 		return
 	}

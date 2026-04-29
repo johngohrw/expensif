@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 )
 
 // ManifestEntry represents a single entry in Vite's manifest.json.
@@ -47,7 +48,7 @@ func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 		))
 	}
 	for _, entryData := range a.Manifest {
-		if entryData.Name == entry {
+		if entryData.Name == entry || strings.Contains(entryData.Src, entry) {
 			return template.HTML(fmt.Sprintf(
 				`<script type="module" src="/static/%s"></script>`,
 				entryData.File,
@@ -58,11 +59,19 @@ func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 	panic(fmt.Sprintf("manifest entry not found: %s", entry))
 }
 
-// DevClient returns the Vite HMR client script tag in development.
+// DevClient returns the React Refresh preamble and Vite HMR client in development.
 // Returns an empty string in production.
 func (a *AssetHelper) DevClient() template.HTML {
 	if !a.Dev {
 		return ""
 	}
-	return template.HTML(`<script type="module" src="http://localhost:8081/@vite/client"></script>`)
+	return template.HTML(`<script type="module" src="http://localhost:8081/@react-refresh"></script>
+<script type="module">
+  import RefreshRuntime from "http://localhost:8081/@react-refresh"
+  RefreshRuntime.injectIntoGlobalHook(window)
+  window.$RefreshReg$ = () => {}
+  window.$RefreshSig$ = () => (type) => type
+  window.__vite_plugin_react_preamble_installed__ = true
+</script>
+<script type="module" src="http://localhost:8081/@vite/client"></script>`)
 }

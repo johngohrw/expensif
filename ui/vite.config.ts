@@ -10,9 +10,7 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        // Register island entry points here as they are created.
-        // Remove placeholder when adding the first real island.
-        placeholder: resolve(__dirname, 'src/entries/placeholder.ts'),
+        categoryPills: resolve(__dirname, 'src/entries/category-pills.tsx'),
       },
       output: {
         entryFileNames: 'js/[name].js',
@@ -30,7 +28,16 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': 'http://localhost:8080',
-      '^/(?!static/).*': 'http://localhost:8080',
+      '^/.*': {
+        target: 'http://localhost:8080',
+        bypass(req) {
+          // Let Vite serve its own internals and source files
+          const url = req.url || '';
+          if (url.startsWith('/@') || url.startsWith('/src/') || url.startsWith('/node_modules/')) {
+            return url;
+          }
+        },
+      },
     },
   },
 });

@@ -1,0 +1,49 @@
+{{/*
+  Button partial — keep in sync with ui/src/components/Button.tsx
+  Both must use identical Tailwind class mappings for variant + size.
+
+  Usage:
+    {{template "button" dict "variant" "primary" "size" "md" "type" "submit" "text" "Save"}}
+    {{template "button" dict "variant" "ghost" "href" "/" "text" "Cancel"}}
+
+  Params:
+    variant  — primary | secondary | neutral | ghost | danger | pill  (default: primary)
+    size     — md | sm | xs  (default: md)
+    type     — button | submit  (default: button; ignored when href is set)
+    text     — button label (required)
+    href     — if set, renders <a> instead of <button>
+    onclick  — optional JS onclick attribute
+    class    — extra Tailwind classes appended
+    name     — optional name attribute (button only)
+    value    — optional value attribute (button only)
+*/}}
+{{- define "button" -}}
+{{- $variant := .variant -}}
+{{- $size := .size -}}
+{{- $type := .type -}}
+{{- $text := .text -}}
+{{- $href := .href -}}
+{{- $onclick := .onclick -}}
+{{- $extraClass := .class -}}
+{{- $name := .name -}}
+{{- $value := .value -}}
+{{- $base := "font-medium transition focus:outline-none" -}}
+{{- $vclass := "" -}}
+{{- $sclass := "" -}}
+{{- if eq $variant "secondary" -}}{{- $vclass = "bg-blue-500 text-white hover:bg-blue-600 rounded-lg" -}}
+{{- else if eq $variant "neutral" -}}{{- $vclass = "bg-gray-100 text-gray-700 hover:bg-gray-200 rounded" -}}
+{{- else if eq $variant "ghost" -}}{{- $vclass = "bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg" -}}
+{{- else if eq $variant "danger" -}}{{- $vclass = "bg-red-50 text-red-600 hover:bg-red-100 rounded" -}}
+{{- else if eq $variant "pill" -}}{{- $vclass = "bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full" -}}
+{{- else -}}{{- $vclass = "bg-blue-600 text-white hover:bg-blue-700 rounded-lg" -}}{{- end -}}
+{{- if eq $size "sm" -}}{{- $sclass = "text-xs px-3 py-1.5" -}}
+{{- else if eq $size "xs" -}}{{- $sclass = "text-xs px-3 py-1" -}}
+{{- else -}}{{- $sclass = "py-2.5" -}}{{- end -}}
+{{- $class := print $base " " $vclass " " $sclass -}}
+{{- if $extraClass -}}{{- $class = print $class " " $extraClass -}}{{- end -}}
+{{- if $href -}}
+<a href="{{$href}}" class="{{$class}}">{{$text}}</a>
+{{- else -}}
+<button type="{{$type}}" class="{{$class}}"{{if $name}} name="{{$name}}"{{end}}{{if $value}} value="{{$value}}"{{end}}{{if $onclick}} onclick="{{$onclick}}"{{end}}>{{$text}}</button>
+{{- end -}}
+{{- end -}}

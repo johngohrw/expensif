@@ -90,6 +90,8 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 	parsePage := func(files ...string) *template.Template {
 		t := template.New("").Funcs(funcMap)
 		allFiles := append([]string{filepath.Join(templatesDir, "base.html")}, files...)
+		partialFiles, _ := filepath.Glob(filepath.Join(templatesDir, "partials", "*.html"))
+		allFiles = append(allFiles, partialFiles...)
 		return template.Must(t.ParseFiles(allFiles...))
 	}
 

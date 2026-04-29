@@ -11,12 +11,9 @@
     </div>
 
     <div class="flex gap-3 pt-2">
-      <a href="/users" class="flex-1 text-center bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg hover:bg-gray-300 transition">
-        Cancel
-      </a>
-      <button type="submit" class="flex-1 bg-blue-600 text-white font-medium py-2.5 rounded-lg hover:bg-blue-700 transition">
-        {{if .User}}Save Changes{{else}}Create User{{end}}
-      </button>
+      {{template "button" dict "variant" "ghost" "href" "/users" "text" "Cancel" "class" "flex-1 text-center"}}
+      {{$btnText := "Create User"}}{{if .User}}{{$btnText = "Save Changes"}}{{end}}
+      {{template "button" dict "variant" "primary" "type" "submit" "text" $btnText "class" "flex-1"}}
     </div>
   </div>
 </form>

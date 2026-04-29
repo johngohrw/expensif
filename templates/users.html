@@ -28,11 +28,9 @@
           <td class="px-4 py-3 font-medium text-gray-900">{{.Name}}</td>
           <td class="px-4 py-3">
             <div class="flex gap-2 justify-end">
-              <a href="/users/edit/{{.ID}}">
-                <button class="bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1.5 rounded hover:bg-gray-200 transition">Edit</button>
-              </a>
+              {{template "button" dict "variant" "neutral" "size" "sm" "href" (print "/users/edit/" .ID) "text" "Edit"}}
               <form method="POST" action="/users/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete user \u0022{{.Name}}\u0022?')">
-                <button type="submit" class="bg-red-50 text-red-600 text-xs font-medium px-3 py-1.5 rounded hover:bg-red-100 transition">Delete</button>
+                {{template "button" dict "variant" "danger" "size" "sm" "type" "submit" "text" "Delete"}}
               </form>
             </div>
           </td>
