@@ -3,6 +3,8 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -400,6 +402,32 @@ func TestAPISummary(t *testing.T) {
 	}
 	if m["byCategory"] == nil {
 		t.Fatal("expected byCategory")
+	}
+}
+
+// ---------- isValidationErr ----------
+
+func TestIsValidationErr(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"direct amount", service.ErrInvalidAmount, true},
+		{"direct category", service.ErrMissingCategory, true},
+		{"direct description", service.ErrMissingDescription, true},
+		{"wrapped amount", fmt.Errorf("service failed: %w", service.ErrInvalidAmount), true},
+		{"wrapped category", fmt.Errorf("service failed: %w", service.ErrMissingCategory), true},
+		{"wrapped description", fmt.Errorf("service failed: %w", service.ErrMissingDescription), true},
+		{"random error", errors.New("random"), false},
+		{"nil error", nil, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isValidationErr(tt.err); got != tt.want {
+				t.Fatalf("isValidationErr(%v) = %v, want %v", tt.err, got, tt.want)
+			}
+		})
 	}
 }
 

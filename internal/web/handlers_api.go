@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -139,5 +140,7 @@ func (h *APIHandler) HandleSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func isValidationErr(err error) bool {
-	return err == service.ErrInvalidAmount || err == service.ErrMissingCategory || err == service.ErrMissingDescription
+	return errors.Is(err, service.ErrInvalidAmount) ||
+		errors.Is(err, service.ErrMissingCategory) ||
+		errors.Is(err, service.ErrMissingDescription)
 }
