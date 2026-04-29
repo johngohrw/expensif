@@ -39,12 +39,6 @@ func newMockRepo() *mockRepo {
 func (r *mockRepo) CreateExpense(_ context.Context, e domain.Expense) (int64, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if e.Date == "" {
-		e.Date = time.Now().Format("2006-01-02")
-	}
-	if e.Currency == "" {
-		e.Currency = "USD"
-	}
 	e.ID = r.nextID
 	e.CreatedAt = time.Now()
 	r.nextID++
@@ -216,23 +210,6 @@ func (r *mockRepo) ListUsers(_ context.Context) ([]domain.User, error) {
 		return users[i].Name < users[j].Name
 	})
 	return users, nil
-}
-
-func (r *mockRepo) SaveUser(_ context.Context, name string) error {
-	if name == "" {
-		return nil
-	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	// dedup check
-	for _, n := range r.users {
-		if n == name {
-			return nil
-		}
-	}
-	r.users[r.nextUserID] = name
-	r.nextUserID++
-	return nil
 }
 
 func (r *mockRepo) CreateUser(_ context.Context, name string) (int64, error) {

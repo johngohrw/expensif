@@ -18,12 +18,6 @@ func NewSQLite(db *sql.DB) Repository {
 }
 
 func (r *sqliteRepo) CreateExpense(ctx context.Context, e domain.Expense) (int64, error) {
-	if e.Date == "" {
-		e.Date = time.Now().Format("2006-01-02")
-	}
-	if e.Currency == "" {
-		e.Currency = "USD"
-	}
 	var paidBy interface{}
 	if e.PaidByID != 0 {
 		paidBy = e.PaidByID
@@ -100,12 +94,6 @@ func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense,
 }
 
 func (r *sqliteRepo) UpdateExpense(ctx context.Context, e domain.Expense) error {
-	if e.Date == "" {
-		e.Date = time.Now().Format("2006-01-02")
-	}
-	if e.Currency == "" {
-		e.Currency = "USD"
-	}
 	var paidBy interface{}
 	if e.PaidByID != 0 {
 		paidBy = e.PaidByID
@@ -243,17 +231,6 @@ func (r *sqliteRepo) ListUsers(ctx context.Context) ([]domain.User, error) {
 		users = append(users, u)
 	}
 	return users, rows.Err()
-}
-
-func (r *sqliteRepo) SaveUser(ctx context.Context, name string) error {
-	if name == "" {
-		return nil
-	}
-	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO users (name) VALUES (?)`, name)
-	if err != nil {
-		return fmt.Errorf("save user: %w", err)
-	}
-	return nil
 }
 
 func (r *sqliteRepo) CreateUser(ctx context.Context, name string) (int64, error) {
