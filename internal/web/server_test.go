@@ -42,7 +42,7 @@ func TestServerRunAndShutdown(t *testing.T) {
 	})
 	api := NewAPIHandler(svc)
 
-	renderer, err := NewRenderer("../../templates")
+	renderer, err := NewRenderer("../../templates", false, nil)
 	if err != nil {
 		t.Fatalf("renderer init failed: %v", err)
 	}

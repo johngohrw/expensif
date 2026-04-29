@@ -14,6 +14,9 @@ type Server struct {
 func NewServer(api *APIHandler, html *HTMLHandler, port string) *Server {
 	mux := http.NewServeMux()
 
+	// Static assets (Vite build output)
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
 	// HTML routes
 	mux.HandleFunc("GET /{$}", html.HandleList)
 	mux.HandleFunc("GET /daily", html.HandleDaily)

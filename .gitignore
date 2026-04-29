@@ -39,3 +39,9 @@ Thumbs.db
 
 # Database (local SQLite)
 *.db
+
+# Generated static assets
+/static/
+
+# Node dependencies
+/ui/node_modules/

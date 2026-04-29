@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"expensif/internal/assets"
 	"expensif/internal/db"
 	"expensif/internal/repository"
 	"expensif/internal/service"
@@ -52,7 +53,18 @@ func main() {
 		}
 	}()
 
-	renderer, err := web.NewRenderer("templates")
+	dev := os.Getenv("DEV") == "true"
+
+	var manifest assets.Manifest
+	if !dev {
+		var err error
+		manifest, err = assets.LoadManifest("static/.vite/manifest.json")
+		if err != nil {
+			log.Fatalf("failed to load asset manifest: %v", err)
+		}
+	}
+
+	renderer, err := web.NewRenderer("templates", dev, manifest)
 	if err != nil {
 		log.Fatalf("template init failed: %v", err)
 	}

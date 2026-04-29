@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 
+	"expensif/internal/assets"
 	"expensif/internal/domain"
 )
 
@@ -31,13 +33,16 @@ type PageData struct {
 	Users          []domain.User
 	User           *domain.User
 	PaidByID       int64
+	Islands        []string // Names of React islands to hydrate on this page
 }
 
 type Renderer struct {
 	templates map[string]*template.Template
 }
 
-func NewRenderer(templatesDir string) (*Renderer, error) {
+func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Renderer, error) {
+	helper := &assets.AssetHelper{Dev: dev, Manifest: manifest}
+
 	funcMap := template.FuncMap{
 		"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
@@ -71,6 +76,15 @@ func NewRenderer(templatesDir string) (*Renderer, error) {
 			}
 		},
 		"currencySymbol": domain.CurrencySymbol,
+		"script":    func(entry string) template.HTML { return helper.ScriptTag(entry) },
+		"devClient": func() template.HTML { return helper.DevClient() },
+		"json": func(v interface{}) (string, error) {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+			return string(b), nil
+		},
 	}
 
 	parsePage := func(files ...string) *template.Template {
