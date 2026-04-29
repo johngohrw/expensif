@@ -292,5 +292,9 @@ func (r *mockRepo) seed() {
 	r.CreateExpense(context.Background(), domain.Expense{Amount: 99.99, Category: "food", Description: "groceries", Date: now, Currency: "EUR"})
 }
 
-// ensure mockRepo implements the interface at compile time.
+// ensure mockRepo implements all repository interfaces at compile time.
 var _ repository.Repository = (*mockRepo)(nil)
+var _ repository.ExpenseRepository = (*mockRepo)(nil)
+var _ repository.UserRepository = (*mockRepo)(nil)
+var _ repository.PreferenceRepository = (*mockRepo)(nil)
+var _ repository.RateRepository = (*mockRepo)(nil)

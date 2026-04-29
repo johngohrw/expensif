@@ -6,12 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"expensif/internal/repository"
 	"expensif/internal/service"
 )
 
 func TestServerShutdownBeforeRun(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.New(repo)
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	})
 	api := NewAPIHandler(svc)
 	html := NewHTMLHandler(svc, nil)
 
@@ -28,7 +34,12 @@ func TestServerShutdownBeforeRun(t *testing.T) {
 
 func TestServerRunAndShutdown(t *testing.T) {
 	repo := newMockRepo()
-	svc := service.New(repo)
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	})
 	api := NewAPIHandler(svc)
 
 	renderer, err := NewRenderer("../../templates")

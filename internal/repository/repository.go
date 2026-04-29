@@ -6,7 +6,7 @@ import (
 	"expensif/internal/domain"
 )
 
-type Repository interface {
+type ExpenseRepository interface {
 	CreateExpense(ctx context.Context, e domain.Expense) (int64, error)
 	ListExpenses(ctx context.Context, limit int) ([]domain.Expense, error)
 	GetExpense(ctx context.Context, id int64) (*domain.Expense, error)
@@ -15,17 +15,40 @@ type Repository interface {
 	ListCategories(ctx context.Context) ([]string, error)
 	SummaryByCategory(ctx context.Context) (map[string]float64, error)
 	TotalExpenses(ctx context.Context) (float64, error)
+}
+
+type PreferenceRepository interface {
 	GetPreferences(ctx context.Context) (*domain.Preferences, error)
 	SavePreferences(ctx context.Context, p domain.Preferences) error
+}
 
+type RateRepository interface {
 	SaveRates(ctx context.Context, base string, date string, rates map[string]float64) error
 	GetRates(ctx context.Context, base string, date string) (map[string]float64, error)
 	GetLatestRates(ctx context.Context, base string) (map[string]float64, string, error)
+}
 
+type UserRepository interface {
 	ListUsers(ctx context.Context) ([]domain.User, error)
-	SaveUser(ctx context.Context, name string) error
 	CreateUser(ctx context.Context, name string) (int64, error)
 	GetUser(ctx context.Context, id int64) (*domain.User, error)
 	UpdateUser(ctx context.Context, id int64, name string) error
 	DeleteUser(ctx context.Context, id int64) error
+}
+
+// Repository is the full composition of all domain repositories.
+// Useful when a single concrete implementation (e.g. SQLite) satisfies everything.
+type Repository interface {
+	ExpenseRepository
+	PreferenceRepository
+	RateRepository
+	UserRepository
+}
+
+// Repos bundles the focused repository interfaces for dependency injection.
+type Repos struct {
+	Expenses    ExpenseRepository
+	Users       UserRepository
+	Preferences PreferenceRepository
+	Rates       RateRepository
 }

@@ -16,7 +16,12 @@ import (
 
 func newTestAPIHandler() (*APIHandler, *mockRepo) {
 	repo := newMockRepo()
-	svc := service.New(repo)
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	})
 	return NewAPIHandler(svc), repo
 }
 

@@ -22,12 +22,21 @@ var (
 )
 
 type Service struct {
-	repo       repository.Repository
+	expenses   repository.ExpenseRepository
+	users      repository.UserRepository
+	prefs      repository.PreferenceRepository
+	rates      repository.RateRepository
 	rateClient *rate.Client
 }
 
-func New(repo repository.Repository) *Service {
-	return &Service{repo: repo, rateClient: rate.NewClient()}
+func New(repos repository.Repos) *Service {
+	return &Service{
+		expenses:   repos.Expenses,
+		users:      repos.Users,
+		prefs:      repos.Preferences,
+		rates:      repos.Rates,
+		rateClient: rate.NewClient(),
+	}
 }
 
 // --- Expenses ---
@@ -58,18 +67,18 @@ func (s *Service) CreateExpense(ctx context.Context, amount float64, category, d
 		Currency: currency,
 		PaidByID: paidByID,
 	}
-	return s.repo.CreateExpense(ctx, e)
+	return s.expenses.CreateExpense(ctx, e)
 }
 
 func (s *Service) ListExpenses(ctx context.Context, limit int) ([]domain.Expense, error) {
 	if limit <= 0 {
 		limit = 100
 	}
-	return s.repo.ListExpenses(ctx, limit)
+	return s.expenses.ListExpenses(ctx, limit)
 }
 
 func (s *Service) GetExpense(ctx context.Context, id int64) (*domain.Expense, error) {
-	return s.repo.GetExpense(ctx, id)
+	return s.expenses.GetExpense(ctx, id)
 }
 
 func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency string, paidByID int64) error {
@@ -99,23 +108,23 @@ func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, c
 		Currency:    currency,
 		PaidByID:    paidByID,
 	}
-	return s.repo.UpdateExpense(ctx, e)
+	return s.expenses.UpdateExpense(ctx, e)
 }
 
 func (s *Service) DeleteExpense(ctx context.Context, id int64) error {
-	return s.repo.DeleteExpense(ctx, id)
+	return s.expenses.DeleteExpense(ctx, id)
 }
 
 func (s *Service) ListCategories(ctx context.Context) ([]string, error) {
-	return s.repo.ListCategories(ctx)
+	return s.expenses.ListCategories(ctx)
 }
 
 func (s *Service) SummaryByCategory(ctx context.Context) (map[string]float64, error) {
-	return s.repo.SummaryByCategory(ctx)
+	return s.expenses.SummaryByCategory(ctx)
 }
 
 func (s *Service) TotalExpenses(ctx context.Context) (float64, error) {
-	return s.repo.TotalExpenses(ctx)
+	return s.expenses.TotalExpenses(ctx)
 }
 
 func (s *Service) DailyGroups(ctx context.Context, limit int) ([]domain.DailyGroup, error) {
@@ -148,7 +157,7 @@ func (s *Service) DailyGroups(ctx context.Context, limit int) ([]domain.DailyGro
 // --- Preferences ---
 
 func (s *Service) Preferences(ctx context.Context) (*domain.Preferences, error) {
-	p, err := s.repo.GetPreferences(ctx)
+	p, err := s.prefs.GetPreferences(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return &domain.Preferences{Currency: "USD"}, nil
@@ -162,14 +171,14 @@ func (s *Service) SavePreferences(ctx context.Context, currency string, userID i
 	if currency == "" {
 		currency = "USD"
 	}
-	return s.repo.SavePreferences(ctx, domain.Preferences{
+	return s.prefs.SavePreferences(ctx, domain.Preferences{
 		Currency: currency,
 		UserID:   userID,
 	})
 }
 
 func (s *Service) ListUsers(ctx context.Context) ([]domain.User, error) {
-	return s.repo.ListUsers(ctx)
+	return s.users.ListUsers(ctx)
 }
 
 func (s *Service) CreateUser(ctx context.Context, name string) (int64, error) {
@@ -177,11 +186,11 @@ func (s *Service) CreateUser(ctx context.Context, name string) (int64, error) {
 	if name == "" {
 		return 0, errors.New("name is required")
 	}
-	return s.repo.CreateUser(ctx, name)
+	return s.users.CreateUser(ctx, name)
 }
 
 func (s *Service) GetUser(ctx context.Context, id int64) (*domain.User, error) {
-	return s.repo.GetUser(ctx, id)
+	return s.users.GetUser(ctx, id)
 }
 
 func (s *Service) UpdateUser(ctx context.Context, id int64, name string) error {
@@ -189,11 +198,11 @@ func (s *Service) UpdateUser(ctx context.Context, id int64, name string) error {
 	if name == "" {
 		return errors.New("name is required")
 	}
-	return s.repo.UpdateUser(ctx, id, name)
+	return s.users.UpdateUser(ctx, id, name)
 }
 
 func (s *Service) DeleteUser(ctx context.Context, id int64) error {
-	return s.repo.DeleteUser(ctx, id)
+	return s.users.DeleteUser(ctx, id)
 }
 
 // --- Exchange Rates ---
@@ -203,16 +212,16 @@ func (s *Service) RefreshRates(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("fetch rates: %w", err)
 	}
-	return s.repo.SaveRates(ctx, "USD", date, rates)
+	return s.rates.SaveRates(ctx, "USD", date, rates)
 }
 
 func (s *Service) GetRatesForConversion(ctx context.Context) (map[string]float64, string, error) {
 	today := time.Now().Format("2006-01-02")
-	rates, err := s.repo.GetRates(ctx, "USD", today)
+	rates, err := s.rates.GetRates(ctx, "USD", today)
 	if err == nil && len(rates) > 0 {
 		return rates, today, nil
 	}
-	rates, date, err := s.repo.GetLatestRates(ctx, "USD")
+	rates, date, err := s.rates.GetLatestRates(ctx, "USD")
 	if err != nil {
 		return nil, "", ErrNoRates
 	}

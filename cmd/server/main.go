@@ -26,7 +26,12 @@ func main() {
 	defer database.Close()
 
 	repo := repository.NewSQLite(database)
-	svc := service.New(repo)
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
