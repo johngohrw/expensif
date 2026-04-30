@@ -14,46 +14,20 @@
 </div>
 
 {{if .Expenses}}
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-50 border-b border-gray-200">
-        <tr>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600">Amount</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600">Category</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600">Description</th>
-          <th class="text-left px-4 py-3 font-semibold text-gray-600">Paid By</th>
-          <th class="px-4 py-3"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {{range .Expenses}}
-        <tr class="border-b border-gray-100 hover:bg-gray-50">
-          <td class="px-4 py-3" title="{{.Date}}">{{humanDate .Date}}</td>
-          <td class="px-4 py-3">
-            <div class="font-medium">{{$.CurrencySymbol}}{{printf "%.2f" .ConvertedAmount}}</div>
-            {{if ne .Currency $.Currency}}
-            <div class="text-xs text-gray-400">{{currencySymbol .Currency}}{{printf "%.2f" .Amount}}</div>
-            {{end}}
-          </td>
-          <td class="px-4 py-3"><span class="inline-block bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">{{.Category}}</span></td>
-          <td class="px-4 py-3 text-gray-600">{{if .Description}}{{.Description}}{{else}}-{{end}}</td>
-          <td class="px-4 py-3 text-gray-600">{{if .PaidByName}}{{.PaidByName}}{{else}}-{{end}}</td>
-          <td class="px-4 py-3">
-            <div class="flex gap-2 justify-end">
-              {{template "button" dict "variant" "neutral" "size" "sm" "href" (print "/expenses/edit/" .ID) "text" "Edit"}}
-              <form method="POST" action="/expenses/delete/{{.ID}}" class="inline" onsubmit="return confirm('Delete expense #{{.ID}}?')">
-                {{template "button" dict "variant" "danger" "size" "sm" "type" "submit" "text" "Delete"}}
-              </form>
-            </div>
-          </td>
-        </tr>
-        {{end}}
-      </tbody>
-    </table>
-  </div>
-</div>
+{{$meta := dict "currency" .Currency "currencySymbol" .CurrencySymbol}}
+{{$actions := list
+  (dict "type" "link" "href" "/expenses/edit/{id}" "text" "Edit" "variant" "neutral")
+  (dict "type" "form" "action" "/expenses/delete/{id}" "text" "Delete" "variant" "danger" "confirm" "Delete expense #{id}?")
+}}
+{{$columns := list
+  (dict "key" "date" "title" "Date" "type" "date")
+  (dict "key" "amount" "title" "Amount" "type" "currency")
+  (dict "key" "category" "title" "Category" "type" "badge")
+  (dict "key" "description" "title" "Description" "type" "text")
+  (dict "key" "paidByName" "title" "Paid By" "type" "text")
+  (dict "key" "actions" "title" "" "type" "actions" "actions" $actions)
+}}
+{{template "data-table" dict "columns" $columns "data" .Expenses "variant" "default" "meta" $meta}}
 {{else}}
 <div class="text-center text-gray-400 py-16">
   No expenses yet.

@@ -80,6 +80,7 @@ func (h *HTMLHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 
 	total, _ := h.svc.TotalExpenses(ctx)
 	data.Total = total
+	data.Islands = []string{"data-table"}
 
 	h.render(w, "list", data)
 }
@@ -110,6 +111,7 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.DailyGroups = groups
+	data.Islands = []string{"data-table"}
 	h.render(w, "daily", data)
 }
 
@@ -269,6 +271,7 @@ func (h *HTMLHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "users")
 	data.Users = users
+	data.Islands = []string{"data-table"}
 	h.render(w, "users", data)
 }
 

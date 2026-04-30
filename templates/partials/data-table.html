@@ -1,0 +1,13 @@
+{{define "data-table"}}
+{{- $columns := .columns -}}
+{{- $data := .data -}}
+{{- $variant := .variant | default "default" -}}
+{{- $meta := .meta | default (dict) -}}
+{{- $props := dict "columns" $columns "data" $data "variant" $variant "meta" $meta -}}
+<div data-table-root>
+  <script type="application/json">{{jsonSafe $props}}</script>
+  <noscript>
+    <p class="text-sm text-gray-500 p-4">Please enable JavaScript to view this table.</p>
+  </noscript>
+</div>
+{{end}}

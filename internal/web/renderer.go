@@ -44,6 +44,17 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 	helper := &assets.AssetHelper{Dev: dev, Manifest: manifest}
 
 	funcMap := template.FuncMap{
+		"default": func(v, def interface{}) interface{} {
+			switch val := v.(type) {
+			case string:
+				if val == "" {
+					return def
+				}
+			case nil:
+				return def
+			}
+			return v
+		},
 		"dict": func(values ...interface{}) (map[string]interface{}, error) {
 			if len(values)%2 != 0 {
 				return nil, fmt.Errorf("invalid dict call")
@@ -84,6 +95,16 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 				return "", err
 			}
 			return string(b), nil
+		},
+		"list": func(items ...interface{}) []interface{} {
+			return items
+		},
+		"jsonSafe": func(v interface{}) template.JS {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("null")
+			}
+			return template.JS(b)
 		},
 	}
 
