@@ -5,6 +5,7 @@
   Usage:
     {{template "button" dict "variant" "primary" "size" "md" "type" "submit" "text" "Save"}}
     {{template "button" dict "variant" "ghost" "href" "/" "text" "Cancel"}}
+    {{template "button" dict "variant" "primary" "href" "/new" "text" "New" "icon" "<svg>...</svg>"}}
 
   Params:
     variant  — primary | secondary | neutral | ghost | danger | pill  (default: primary)
@@ -16,6 +17,7 @@
     class    — extra Tailwind classes appended
     name     — optional name attribute (button only)
     value    — optional value attribute (button only)
+    icon     — optional inline SVG HTML string (rendered raw before text)
 */}}
 {{- define "button" -}}
 {{- $variant := .variant -}}
@@ -27,7 +29,8 @@
 {{- $extraClass := .class -}}
 {{- $name := .name -}}
 {{- $value := .value -}}
-{{- $base := "font-medium transition focus:outline-none" -}}
+{{- $icon := .icon -}}
+{{- $base := "font-medium whitespace-nowrap transition focus:outline-none" -}}
 {{- $vclass := "" -}}
 {{- $sclass := "" -}}
 {{- if eq $variant "secondary" -}}{{- $vclass = "bg-blue-500 text-white hover:bg-blue-600 rounded-lg" -}}
@@ -38,12 +41,13 @@
 {{- else -}}{{- $vclass = "bg-blue-600 text-white hover:bg-blue-700 rounded-lg" -}}{{- end -}}
 {{- if eq $size "sm" -}}{{- $sclass = "text-xs px-3 py-1.5" -}}
 {{- else if eq $size "xs" -}}{{- $sclass = "text-xs px-3 py-1" -}}
-{{- else -}}{{- $sclass = "py-2.5" -}}{{- end -}}
+{{- else -}}{{- $sclass = "px-4 py-2.5" -}}{{- end -}}
 {{- $class := print $base " " $vclass " " $sclass -}}
 {{- if $extraClass -}}{{- $class = print $class " " $extraClass -}}{{- end -}}
+{{- if $icon -}}{{- $class = print $class " inline-flex items-center gap-1.5" -}}{{- end -}}
 {{- if $href -}}
-<a href="{{$href}}" class="{{$class}}">{{$text}}</a>
+<a href="{{$href}}" class="{{$class}}">{{if $icon}}{{$icon | safeHTML}}{{- end}}{{$text}}</a>
 {{- else -}}
-<button type="{{$type}}" class="{{$class}}"{{if $name}} name="{{$name}}"{{end}}{{if $value}} value="{{$value}}"{{end}}{{if $onclick}} onclick="{{$onclick}}"{{end}}>{{$text}}</button>
+<button type="{{$type}}" class="{{$class}}"{{if $name}} name="{{$name}}"{{end}}{{if $value}} value="{{$value}}"{{end}}{{if $onclick}} onclick="{{$onclick}}"{{end}}>{{if $icon}}{{$icon | safeHTML}}{{- end}}{{$text}}</button>
 {{- end -}}
 {{- end -}}

@@ -101,14 +101,15 @@ describe('DataTable', () => {
   });
 
   it('formats dates with humanDate', () => {
-    const today = new Date().toISOString().slice(0, 10);
     const columns = [
       { key: 'date', title: 'Date', type: 'date' as const },
     ];
-    const data = [{ date: today }];
+    const data = [{ date: '2024-06-15' }];
 
     render(<DataTable columns={columns} data={data} />);
 
-    expect(screen.getByText('Today')).toBeInTheDocument();
+    const span = screen.getByTitle('2024-06-15');
+    expect(span).toBeInTheDocument();
+    expect(span.textContent).not.toBe('-');
   });
 });

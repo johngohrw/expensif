@@ -216,8 +216,8 @@ func TestAPIGet_Success(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected map, got %T", resp.Data)
 	}
-	if m["ID"] != float64(1) {
-		t.Fatalf("expected id 1, got %v", m["ID"])
+	if m["id"] != float64(1) {
+		t.Fatalf("expected id 1, got %v", m["id"])
 	}
 }
 

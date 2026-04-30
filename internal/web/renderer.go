@@ -44,7 +44,7 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 	helper := &assets.AssetHelper{Dev: dev, Manifest: manifest}
 
 	funcMap := template.FuncMap{
-		"default": func(v, def interface{}) interface{} {
+		"default": func(def, v interface{}) interface{} {
 			switch val := v.(type) {
 			case string:
 				if val == "" {
@@ -74,21 +74,27 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			if err != nil {
 				return dateStr
 			}
-			today := time.Now().Truncate(24 * time.Hour)
-			date := t.Truncate(24 * time.Hour)
-			diff := int(today.Sub(date).Hours() / 24)
-			switch diff {
-			case 0:
+			todayStr := time.Now().Format("2006-01-02")
+			if dateStr == todayStr {
 				return "Today"
-			case 1:
-				return "Yesterday"
-			default:
-				return humanize.Time(t)
 			}
+			yesterdayStr := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+			if dateStr == yesterdayStr {
+				return "Yesterday"
+			}
+			return humanize.Time(t)
+		},
+		"formatDate": func(dateStr string) string {
+			t, err := time.ParseInLocation("2006-01-02", dateStr, time.Local)
+			if err != nil {
+				return dateStr
+			}
+			return t.Format("Jan 2, Monday")
 		},
 		"currencySymbol": domain.CurrencySymbol,
 		"script":    func(entry string) template.HTML { return helper.ScriptTag(entry) },
 		"devClient": func() template.HTML { return helper.DevClient() },
+		"safeHTML": func(s string) template.HTML { return template.HTML(s) },
 		"json": func(v interface{}) (string, error) {
 			b, err := json.Marshal(v)
 			if err != nil {

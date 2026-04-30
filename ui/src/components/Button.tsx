@@ -20,7 +20,7 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  md: 'py-2.5',
+  md: 'px-4 py-2.5',
   sm: 'text-xs px-3 py-1.5',
   xs: 'text-xs px-3 py-1',
 };
@@ -34,7 +34,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = [
-    'font-medium transition focus:outline-none',
+    'font-medium whitespace-nowrap transition focus:outline-none',
     variantClasses[variant],
     sizeClasses[size],
     className,
