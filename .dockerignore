@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Context & docs
+.context
+*.md
+
+# Skills
+.skills
+.skills.zip
+
+# Node
+ui/node_modules
+ui/dist
+
+# Go build artifacts
+bin/
+*.exe
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store

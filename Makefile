@@ -1,4 +1,4 @@
-.PHONY: dev build-ui build-server prod run
+.PHONY: dev build-ui build-server prod run docker-build docker-up docker-down
 
 dev-install:
 	cd ui && npm install
@@ -21,3 +21,16 @@ prod: build-ui build-server
 # Run production server
 run: prod
 	./bin/server
+
+# Docker
+# Build Docker image
+docker-build:
+	docker compose build
+
+# Start Docker container (production)
+docker-up:
+	docker compose up -d
+
+# Stop Docker container
+docker-down:
+	docker compose down

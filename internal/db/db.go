@@ -11,11 +11,14 @@ import (
 )
 
 func New() (*sql.DB, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, fmt.Errorf("get home dir: %w", err)
+	dbDir := os.Getenv("DATA_DIR")
+	if dbDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("get home dir: %w", err)
+		}
+		dbDir = filepath.Join(home, ".expensif")
 	}
-	dbDir := filepath.Join(home, ".expensif")
 	if err := os.MkdirAll(dbDir, 0755); err != nil {
 		return nil, fmt.Errorf("create db dir: %w", err)
 	}

@@ -1,0 +1,23 @@
+services:
+  expensif:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: expensif:latest
+    container_name: expensif
+    ports:
+      # Host port : Container port (internal is always 8080)
+      # Change the first number to map a different host port
+      - "${PORT:-8080}:8080"
+    environment:
+      # Override defaults by creating a .env file or setting in Unraid UI
+      - PORT=8080
+      - DATA_DIR=/data
+    volumes:
+      # Named volume for SQLite persistence
+      # In Unraid: map host path /mnt/user/appdata/expensif to /data
+      - expensif_data:/data
+    restart: unless-stopped
+
+volumes:
+  expensif_data:
