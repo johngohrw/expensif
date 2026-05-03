@@ -40,6 +40,9 @@ Thumbs.db
 # Database (local SQLite)
 *.db
 
+# Air hot reload build artifacts
+tmp/
+
 # Generated static assets
 /static/
 

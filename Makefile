@@ -3,9 +3,10 @@
 dev-install:
 	cd ui && npm install
 
-# Development: start both Go and Vite dev servers; kill both on Ctrl+C
+# Development: start both Go (with air hot reload) and Vite dev servers;
+# kill both on Ctrl+C
 dev:
-	@bash -c 'trap "kill 0" INT; DEV=true go run ./cmd/server & cd ui && npm run dev & wait'
+	@bash -c 'trap "kill 0" INT; air & cd ui && npm run dev & wait'
 
 # Build UI for production
 build-ui:
