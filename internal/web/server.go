@@ -18,8 +18,8 @@ func NewServer(api *APIHandler, html *HTMLHandler, port string) *Server {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	// HTML routes
-	mux.HandleFunc("GET /{$}", html.HandleList)
-	mux.HandleFunc("GET /daily", html.HandleDaily)
+	mux.HandleFunc("GET /{$}", html.HandleDaily)
+	mux.HandleFunc("GET /expenses", html.HandleList)
 	mux.HandleFunc("GET /preferences", html.HandlePreferences)
 	mux.HandleFunc("POST /preferences", html.HandleSavePreferences)
 	mux.HandleFunc("GET /expenses/new", html.HandleAdd)
