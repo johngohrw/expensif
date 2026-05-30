@@ -1,5 +1,5 @@
 import { hydrateRoot } from 'react-dom/client';
-import { DataTable } from '../components/DataTable';
+import { DataTable } from '../components/DataTable/DataTable';
 
 // Simple action registry for declarative onClick handlers.
 // Extend this map at build time if you need custom client-side actions.
