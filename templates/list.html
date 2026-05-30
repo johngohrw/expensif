@@ -2,14 +2,14 @@
 {{define "content"}}
 <div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
   {{if .ShowConverted}}
-  <div class="text-2xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}</div>
-  <div class="text-sm text-gray-500 mt-1">
+  <div class="text-xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}</div>
+  <div class="text-gray-500 mt-1">
     {{range $i, $c := .Categories}}{{if $i}} · {{end}}{{$c.Name}}: {{$.CurrencySymbol}}{{printf "%.2f" $c.Amount}}{{end}}
   </div>
   <div class="text-xs text-gray-400 mt-1">Converted using rates from {{.RateDate}}</div>
   {{else}}
-  <div class="text-2xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
-  <div class="text-sm text-gray-500 mt-1">Currency conversion unavailable — rates will be fetched shortly.</div>
+  <div class="text-xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
+  <div class="text-gray-500 mt-1">Currency conversion unavailable — rates will be fetched shortly.</div>
   {{end}}
 </div>
 
