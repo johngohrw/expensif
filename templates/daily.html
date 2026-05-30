@@ -2,10 +2,10 @@
 <div class="space-y-6">
   {{range .DailyGroups}}
   <div
-    class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+    class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden"
   >
     <div
-      class="px-6 py-4 border-b border-gray-100 flex items-center justify-between"
+      class="px-4 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between"
     >
       <div>
         <h3 class="text-lg font-bold text-gray-900">{{formatDate .Date}}</h3>
@@ -39,7 +39,7 @@
     (dict "key" "actions" "title" "" "type" "actions" "actions" $actions) }}
     {{template "data-table" dict "columns" $columns "data" .Expenses "variant"
     "ghost" "meta" $meta}} {{else}}
-    <div class="px-6 py-6 text-sm text-gray-400 italic">
+    <div class="px-4 sm:px-6 py-6 text-sm text-gray-400 italic">
       No expenses for this day.
       <a
         href="/expenses/new?date={{.Date}}"

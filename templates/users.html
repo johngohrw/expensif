@@ -22,7 +22,7 @@
 }}
 {{template "data-table" dict "columns" $columns "data" .Users "variant" "default"}}
 {{else}}
-<div class="text-center text-gray-400 py-16 bg-white rounded-xl border border-gray-200">
+<div class="text-center text-gray-400 py-16 bg-white rounded-none sm:rounded-xl border border-gray-200">
   No users yet.
   <a href="/users/new" class="text-blue-600 hover:underline ml-1">Add one</a>
 </div>

@@ -33,7 +33,7 @@ interface DataTableProps {
 const variantStyles = {
   default: {
     container:
-      "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden",
+      "bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden",
     thead: "bg-gray-50 border-b border-gray-200",
     th: "text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap",
     tr: "border-b border-gray-100 hover:bg-gray-50",
