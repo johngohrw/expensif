@@ -36,16 +36,16 @@ const variantStyles = {
     container:
       "bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden",
     thead: "bg-gray-50 border-b border-gray-200",
-    th: "text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap",
+    th: "text-left px-3 py-2 font-semibold text-gray-600 whitespace-nowrap",
     tr: "border-b border-gray-100 hover:bg-gray-50",
-    td: "px-4 py-3",
+    td: "px-3 py-2 text-xs",
   },
   ghost: {
     container: "",
     thead: "bg-[#fdfdfd]",
     th: "text-left px-3 py-2 font-semibold text-gray-500 text-xs whitespace-nowrap",
     tr: "hover:bg-gray-50",
-    td: "px-3 py-2",
+    td: "px-3 py-2 text-xs whitespace-nowrap",
   },
 };
 

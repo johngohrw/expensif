@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+func devHost() string {
+	if h := os.Getenv("VITE_DEV_HOST"); h != "" {
+		return h
+	}
+	return "localhost:8081"
+}
+
 // ManifestEntry represents a single entry in Vite's manifest.json.
 type ManifestEntry struct {
 	File string `json:"file"`
@@ -43,8 +50,8 @@ type AssetHelper struct {
 func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 	if a.Dev {
 		return template.HTML(fmt.Sprintf(
-			`<script type="module" src="http://localhost:8081/src/entries/%s.tsx"></script>`,
-			entry,
+			`<script type="module" src="http://%s/src/entries/%s.tsx"></script>`,
+			devHost(), entry,
 		))
 	}
 	for _, entryData := range a.Manifest {
@@ -65,13 +72,14 @@ func (a *AssetHelper) DevClient() template.HTML {
 	if !a.Dev {
 		return ""
 	}
-	return template.HTML(`<script type="module" src="http://localhost:8081/@react-refresh"></script>
+	host := devHost()
+	return template.HTML(fmt.Sprintf(`<script type="module" src="http://%s/@react-refresh"></script>
 <script type="module">
-  import RefreshRuntime from "http://localhost:8081/@react-refresh"
+  import RefreshRuntime from "http://%s/@react-refresh"
   RefreshRuntime.injectIntoGlobalHook(window)
   window.$RefreshReg$ = () => {}
   window.$RefreshSig$ = () => (type) => type
   window.__vite_plugin_react_preamble_installed__ = true
 </script>
-<script type="module" src="http://localhost:8081/@vite/client"></script>`)
+<script type="module" src="http://%s/@vite/client"></script>`, host, host, host))
 }
