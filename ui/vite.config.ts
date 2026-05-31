@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         categoryPills: resolve(__dirname, 'src/entries/category-pills.tsx'),
         dataTable: resolve(__dirname, 'src/entries/data-table.tsx'),
+        mobileNav: resolve(__dirname, 'src/entries/mobile-nav.tsx'),
       },
       output: {
         entryFileNames: 'js/[name].js',
