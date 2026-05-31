@@ -1,6 +1,8 @@
 {{define "title"}}Edit Expense{{end}}
 {{define "content"}}
+{{template "mobile-pad-start"}}
 {{template "page-title" dict "title" (printf "Edit Expense #%d" .Expense.ID)}}
+{{template "mobile-pad-end"}}
 <form method="POST" action="/expenses/edit/{{.Expense.ID}}">
   {{template "form" dict "Title" (printf "Edit Expense #%d" .Expense.ID) "SubmitLabel" "Save Changes" "Expense" .Expense "Today" .Today "Currency" .Currency "Users" .Users "PaidByID" .PaidByID}}
 </form>

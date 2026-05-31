@@ -1,0 +1,12 @@
+{{/*
+  Mobile content padding wrapper.
+  Adds horizontal padding on mobile (px-3) and removes it on desktop (sm:px-0).
+  Use as a start/end pair around any content that needs mobile breathing room.
+
+  Usage:
+    {{template "mobile-pad-start"}}
+      {{template "page-title" dict "title" "Page Title"}}
+    {{template "mobile-pad-end"}}
+*/}}
+{{define "mobile-pad-start"}}<div class="px-3 sm:px-0">{{end}}
+{{define "mobile-pad-end"}}</div>{{end}}

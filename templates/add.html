@@ -1,6 +1,8 @@
 {{define "title"}}New Expense{{end}}
 {{define "content"}}
+{{template "mobile-pad-start"}}
 {{template "page-title" dict "title" "New Expense"}}
+{{template "mobile-pad-end"}}
 <form method="POST" action="/expenses/new">
   {{template "form" dict "Title" "New Expense" "SubmitLabel" "Create" "Today" .Today "IsAdd" true "Currency" .Currency "Users" .Users "PaidByID" .PaidByID}}
 </form>

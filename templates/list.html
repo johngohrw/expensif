@@ -1,38 +1,48 @@
-{{define "title"}}All Expenses{{end}}
-{{define "content"}}
-{{template "page-title" dict "title" "All Expenses"}}
-<div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+{{define "title"}}All Expenses{{end}} {{define "content"}} {{template
+"mobile-pad-start"}} {{template "page-title" dict "title" "All Expenses"}}
+{{template "mobile-pad-end"}}
+<div
+  class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6"
+>
   {{if .ShowConverted}}
-  <div class="text-xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}</div>
-  <div class="text-gray-500 mt-1">
-    {{range $i, $c := .Categories}}{{if $i}} · {{end}}{{$c.Name}}: {{$.CurrencySymbol}}{{printf "%.2f" $c.Amount}}{{end}}
+  <div class="text-xl font-bold text-gray-900">
+    Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}
   </div>
-  <div class="text-xs text-gray-400 mt-1">Converted using rates from {{.RateDate}}</div>
+  <div class="text-gray-500 mt-1">
+    {{range $i, $c := .Categories}}{{if $i}} · {{end}}{{$c.Name}}:
+    {{$.CurrencySymbol}}{{printf "%.2f" $c.Amount}}{{end}}
+  </div>
+  <div class="text-xs text-gray-400 mt-1">
+    Converted using rates from {{.RateDate}}
+  </div>
   {{else}}
-  <div class="text-xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}</div>
-  <div class="text-gray-500 mt-1">Currency conversion unavailable — rates will be fetched shortly.</div>
+  <div class="text-xl font-bold text-gray-900">
+    Total: {{.CurrencySymbol}}{{printf "%.2f" .Total}}
+  </div>
+  <div class="text-gray-500 mt-1">
+    Currency conversion unavailable — rates will be fetched shortly.
+  </div>
   {{end}}
 </div>
 
-{{if .Expenses}}
-{{$meta := dict "currency" .Currency "currencySymbol" .CurrencySymbol}}
-{{$actions := list
-  (dict "type" "link" "href" "/expenses/edit/{id}" "text" "Edit" "variant" "neutral")
-  (dict "type" "form" "action" "/expenses/delete/{id}" "text" "Delete" "variant" "danger" "confirm" "Delete expense #{id}?")
-}}
-{{$columns := list
-  (dict "key" "date" "title" "Date" "type" "date")
-  (dict "key" "amount" "title" "Amount" "type" "currency")
-  (dict "key" "category" "title" "Category" "type" "badge")
-  (dict "key" "description" "title" "Description" "type" "text")
-  (dict "key" "paidByName" "title" "Paid By" "type" "text")
-  (dict "key" "actions" "title" "" "type" "actions" "actions" $actions)
-}}
-{{template "data-table" dict "columns" $columns "data" .Expenses "variant" "default" "meta" $meta}}
-{{else}}
+{{if .Expenses}} {{$meta := dict "currency" .Currency "currencySymbol"
+.CurrencySymbol}} {{$actions := list (dict "type" "link" "href"
+"/expenses/edit/{id}" "text" "Edit" "variant" "neutral") (dict "type" "form"
+"action" "/expenses/delete/{id}" "text" "Delete" "variant" "danger" "confirm"
+"Delete expense #{id}?") }} {{$columns := list (dict "key" "date" "title" "Date"
+"type" "date") (dict "key" "amount" "title" "Amount" "type" "currency") (dict
+"key" "category" "title" "Category" "type" "badge") (dict "key" "description"
+"title" "Description" "type" "text") (dict "key" "paidByName" "title" "Paid By"
+"type" "text") (dict "key" "actions" "title" "" "type" "actions" "actions"
+$actions) }} {{template "data-table" dict "columns" $columns "data" .Expenses
+"variant" "default" "meta" $meta}} {{else}}
 <div class="text-center text-gray-400 py-16">
-  No expenses yet.
-  <a href="/expenses/new" class="text-blue-600 hover:underline ml-1">Add one</a>
+  {{template "mobile-pad-start"}}
+  <div class="mb-3">No expenses yet.</div>
+  <div>
+    {{template "button" dict "variant" "primary" "size" "sm" "href"
+    "/expenses/new" "text" "Add one"}}
+  </div>
+  {{template "mobile-pad-end"}}
 </div>
-{{end}}
-{{end}}
+{{end}} {{end}}

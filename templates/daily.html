@@ -1,7 +1,6 @@
-{{define "title"}}Daily View{{end}}
-{{define "content"}}
-{{template "page-title" dict "title" "Daily View"}}
-{{if .DailyGroups}}
+{{define "title"}}Daily View{{end}} {{define "content"}} {{template
+"mobile-pad-start"}} {{template "page-title" dict "title" "Daily View"}}
+{{template "mobile-pad-end"}} {{if .DailyGroups}}
 <div class="space-y-6">
   {{range .DailyGroups}}
   <div
@@ -26,20 +25,23 @@
     (dict "key" "actions" "title" "" "type" "actions" "actions" $actions) -}}
     {{template "data-table" dict "columns" $columns "data" .Expenses "variant"
     "ghost" "meta" $meta}}
-    <div class="px-3 sm:px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+    <div
+      class="px-3 sm:px-4 py-3 border-t border-gray-100 flex items-center justify-between"
+    >
       <div class="text-sm font-bold text-gray-900">
-        {{if .ConvertedTotal}}
-        {{$.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}
-        {{else}}
-        {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
+        {{if .ConvertedTotal}} {{$.CurrencySymbol}}{{printf "%.2f"
+        .ConvertedTotal}} {{else}} {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
         {{end}}
       </div>
-      {{template "button" dict "variant" "neutral" "size" "sm" "href" (print "/expenses/new?date=" .Date) "text" "+ Add expense"}}
+      {{template "button" dict "variant" "neutral" "size" "sm" "href" (print
+      "/expenses/new?date=" .Date) "text" "+ Add expense"}}
     </div>
     {{else}}
-    <div class="px-3 sm:px-4 py-6 text-sm text-gray-400 italic flex items-center gap-2">
-      No expenses for this day.
-      {{template "button" dict "variant" "primary" "size" "sm" "href" (print "/expenses/new?date=" .Date) "text" "Add one"}}
+    <div
+      class="px-3 sm:px-4 py-6 text-sm text-gray-400 italic flex items-center gap-2"
+    >
+      No expenses for this day. {{template "button" dict "variant" "primary"
+      "size" "sm" "href" (print "/expenses/new?date=" .Date) "text" "Add one"}}
     </div>
     {{end}}
   </div>
@@ -47,7 +49,12 @@
 </div>
 {{else}}
 <div class="text-center text-gray-400 py-16">
-  No expenses yet.
-  {{template "button" dict "variant" "primary" "size" "sm" "href" "/expenses/new" "text" "Add one"}}
+  {{template "mobile-pad-start"}}
+  <div class="mb-3">No expenses yet.</div>
+  <div>
+    {{template "button" dict "variant" "primary" "size" "sm" "href"
+    "/expenses/new" "text" "Add one"}}
+  </div>
+  {{template "mobile-pad-end"}}
 </div>
 {{end}} {{end}}

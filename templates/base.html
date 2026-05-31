@@ -11,7 +11,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 text-sm">
 <div class="max-w-3xl mx-auto px-0 sm:px-4">
-  <nav class="sticky top-0 z-40 bg-gray-50 flex items-center gap-4 sm:gap-6 py-4 px-4 border-b border-gray-200">
+  <nav class="sticky top-0 z-40 bg-gray-50 flex items-center gap-4 sm:gap-6 py-3 px-3 sm:px-0 border-b border-gray-200">
     <div id="mobile-nav-root" class="sm:hidden" data-props='{"links":[{"label":"Daily","href":"/","active":{{if eq .Active "daily"}}true{{else}}false{{end}}},{"label":"Calendar","href":"/calendar","active":{{if eq .Active "calendar"}}true{{else}}false{{end}}}],"preferences":{"label":"Preferences","href":"/preferences","active":{{if eq .Active "prefs"}}true{{else}}false{{end}}}}'></div>
     <a href="/" class="hidden sm:block font-semibold {{if eq .Active "daily"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}}">Daily</a>
     <a href="/calendar" class="hidden sm:block font-semibold {{if eq .Active "calendar"}}text-gray-900{{else}}text-blue-600 hover:text-blue-800{{end}}">Calendar</a>
