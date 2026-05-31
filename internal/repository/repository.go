@@ -15,6 +15,7 @@ type ExpenseRepository interface {
 	ListCategories(ctx context.Context) ([]string, error)
 	SummaryByCategory(ctx context.Context) (map[string]float64, error)
 	TotalExpenses(ctx context.Context) (float64, error)
+	GetEarliestExpenseDate(ctx context.Context) (string, error)
 }
 
 type PreferenceRepository interface {

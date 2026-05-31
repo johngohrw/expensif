@@ -127,6 +127,10 @@ func (s *Service) TotalExpenses(ctx context.Context) (float64, error) {
 	return s.expenses.TotalExpenses(ctx)
 }
 
+func (s *Service) GetEarliestExpenseDate(ctx context.Context) (string, error) {
+	return s.expenses.GetEarliestExpenseDate(ctx)
+}
+
 func (s *Service) DailyGroups(ctx context.Context, limit int) ([]domain.DailyGroup, error) {
 	expenses, err := s.ListExpenses(ctx, limit)
 	if err != nil {

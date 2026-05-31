@@ -1,0 +1,84 @@
+{{define "title"}}Calendar{{end}} {{define "content"}}
+<div
+  class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+>
+  <div class="overflow-y-auto max-h-[70vh]" id="calendar-scroll">
+    <div class="grid grid-cols-7 min-w-[320px]">
+      <!-- weekday headers -->
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Su
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Mo
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Tu
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        We
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Th
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Fr
+      </div>
+      <div
+        class="sticky top-0 z-20 bg-white border-b border-gray-200 py-2 text-center text-xs font-semibold text-gray-500"
+      >
+        Sa
+      </div>
+
+      {{range .CalendarMonths}}
+      <div class="col-span-7">
+        <div
+          class="sticky top-7 z-10 bg-gray-50 border-b border-gray-200 px-2 py-1"
+        >
+          <span class="text-xs font-bold text-gray-500">{{.Label}}</span>
+        </div>
+        <div class="grid grid-cols-7">
+          {{range .Cells}} {{if eq .Day 0}}
+          <div class="h-[120px] bg-gray-100"></div>
+          {{else if .IsToday}}
+          <div data-today class="h-[120px] border border-gray-100 p-2">
+            <div
+              class="inline-flex items-center justify-center -m-1 w-6 h-6 rounded-full bg-red-500"
+            >
+              <span class="text-xs font-bold text-white">{{.Day}}</span>
+            </div>
+          </div>
+          {{else}}
+          <div class="h-[120px] border border-gray-100 p-2">
+            <span class="text-xs text-gray-600">{{.Day}}</span>
+          </div>
+          {{end}} {{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var scroll = document.getElementById("calendar-scroll");
+    var today = scroll.querySelector("[data-today]");
+    if (today) {
+      scroll.scrollTop =
+        today.offsetTop - scroll.clientHeight / 2 + today.clientHeight / 2;
+    }
+  })();
+</script>
+{{end}}

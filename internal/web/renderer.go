@@ -24,6 +24,7 @@ type PageData struct {
 	Categories     []domain.CategorySummary
 	Today          string
 	DailyGroups    []domain.DailyGroup
+	CalendarMonths []domain.CalendarMonth
 	CurrencySymbol string
 	Currency       string
 	ConvertedTotal float64
@@ -130,6 +131,7 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 		"prefs":     parsePage(filepath.Join(templatesDir, "preferences.html")),
 		"users":     parsePage(filepath.Join(templatesDir, "users.html")),
 		"user_form": parsePage(filepath.Join(templatesDir, "user_form.html")),
+		"calendar":  parsePage(filepath.Join(templatesDir, "calendar.html")),
 	}
 
 	return &Renderer{templates: templates}, nil

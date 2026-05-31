@@ -172,6 +172,18 @@ func (r *sqliteRepo) SummaryByCategory(ctx context.Context) (map[string]float64,
 	return m, rows.Err()
 }
 
+func (r *sqliteRepo) GetEarliestExpenseDate(ctx context.Context) (string, error) {
+	var date sql.NullString
+	err := r.db.QueryRowContext(ctx, `SELECT MIN(date) FROM expenses`).Scan(&date)
+	if err != nil {
+		return "", err
+	}
+	if !date.Valid {
+		return "", nil
+	}
+	return date.String, nil
+}
+
 func (r *sqliteRepo) TotalExpenses(ctx context.Context) (float64, error) {
 	var total sql.NullFloat64
 	err := r.db.QueryRowContext(ctx, `SELECT SUM(amount) FROM expenses`).Scan(&total)

@@ -85,6 +85,66 @@ func (h *HTMLHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "list", data)
 }
 
+func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	data := h.basePageData(ctx, "calendar")
+
+	earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
+	today := time.Now()
+
+	// Start = earliest expense or 1 year before today, whichever is earlier
+	var start time.Time
+	if earliest != "" {
+		start, _ = time.Parse("2006-01-02", earliest)
+	}
+	oneYearAgo := today.AddDate(-1, 0, 0)
+	if start.IsZero() || start.After(oneYearAgo) {
+		start = oneYearAgo
+	}
+	start = time.Date(start.Year(), start.Month(), 1, 0, 0, 0, 0, time.Local)
+
+	// End = today + 1 year
+	end := today.AddDate(1, 0, 0)
+	end = time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, time.Local)
+
+	var months []domain.CalendarMonth
+	for m := start; !m.After(end); m = m.AddDate(0, 1, 0) {
+		var month domain.CalendarMonth
+		month.Label = m.Format("Jan 2006")
+
+		first := m
+		last := m.AddDate(0, 1, -1)
+
+		// Padding before (Sunday → first day)
+		for d := 0; d < int(first.Weekday()); d++ {
+			month.Cells = append(month.Cells, domain.CalendarCell{})
+		}
+
+		// Days
+		for d := first; !d.After(last); d = d.AddDate(0, 0, 1) {
+			isToday := d.Format("2006-01-02") == data.Today
+			if isToday {
+				month.HasToday = true
+			}
+			month.Cells = append(month.Cells, domain.CalendarCell{
+				Day:     d.Day(),
+				Date:    d.Format("2006-01-02"),
+				IsToday: isToday,
+			})
+		}
+
+		// Padding after (last day → Saturday)
+		for d := int(last.Weekday()) + 1; d <= 6; d++ {
+			month.Cells = append(month.Cells, domain.CalendarCell{})
+		}
+
+		months = append(months, month)
+	}
+
+	data.CalendarMonths = months
+	h.render(w, "calendar", data)
+}
+
 func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	groups, err := h.svc.DailyGroups(ctx, 100)

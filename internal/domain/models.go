@@ -36,3 +36,15 @@ type DailyGroup struct {
 	Total          float64   `json:"total"`
 	ConvertedTotal float64   `json:"convertedTotal"`
 }
+
+type CalendarCell struct {
+	Day     int    `json:"day"`
+	Date    string `json:"date"`
+	IsToday bool   `json:"isToday"`
+}
+
+type CalendarMonth struct {
+	Label    string         `json:"label"`
+	HasToday bool           `json:"hasToday"`
+	Cells    []CalendarCell `json:"cells"`
+}

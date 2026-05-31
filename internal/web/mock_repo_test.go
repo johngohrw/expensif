@@ -148,6 +148,18 @@ func (r *mockRepo) TotalExpenses(_ context.Context) (float64, error) {
 	return total, nil
 }
 
+func (r *mockRepo) GetEarliestExpenseDate(_ context.Context) (string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var earliest string
+	for _, e := range r.expenses {
+		if earliest == "" || e.Date < earliest {
+			earliest = e.Date
+		}
+	}
+	return earliest, nil
+}
+
 func (r *mockRepo) GetPreferences(_ context.Context) (*domain.Preferences, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

@@ -19,6 +19,7 @@ func NewServer(api *APIHandler, html *HTMLHandler, port string) *Server {
 
 	// HTML routes
 	mux.HandleFunc("GET /{$}", html.HandleDaily)
+	mux.HandleFunc("GET /calendar", html.HandleCalendar)
 	mux.HandleFunc("GET /expenses", html.HandleList)
 	mux.HandleFunc("GET /preferences", html.HandlePreferences)
 	mux.HandleFunc("POST /preferences", html.HandleSavePreferences)
