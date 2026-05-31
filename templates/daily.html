@@ -1,4 +1,7 @@
-{{define "title"}}Daily View{{end}} {{define "content"}} {{if .DailyGroups}}
+{{define "title"}}Daily View{{end}}
+{{define "content"}}
+{{template "page-title" dict "title" "Daily View"}}
+{{if .DailyGroups}}
 <div class="space-y-6">
   {{range .DailyGroups}}
   <div

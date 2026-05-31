@@ -1,5 +1,6 @@
 {{define "title"}}Edit Expense{{end}}
 {{define "content"}}
+{{template "page-title" dict "title" (printf "Edit Expense #%d" .Expense.ID)}}
 <form method="POST" action="/expenses/edit/{{.Expense.ID}}">
   {{template "form" dict "Title" (printf "Edit Expense #%d" .Expense.ID) "SubmitLabel" "Save Changes" "Expense" .Expense "Today" .Today "Currency" .Currency "Users" .Users "PaidByID" .PaidByID}}
 </form>

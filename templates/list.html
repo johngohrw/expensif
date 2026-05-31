@@ -1,5 +1,6 @@
 {{define "title"}}All Expenses{{end}}
 {{define "content"}}
+{{template "page-title" dict "title" "All Expenses"}}
 <div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
   {{if .ShowConverted}}
   <div class="text-xl font-bold text-gray-900">Total: {{.CurrencySymbol}}{{printf "%.2f" .ConvertedTotal}}</div>

@@ -1,0 +1,18 @@
+{{/* Page title partial — consistent heading for every page. Keep styling in
+sync with any React page-header component if one is added. Usage: {{template
+"page-title" dict "title" "Page Title"}} {{template "page-title" dict "title"
+"Page Title" "subtitle" "Optional subtitle"}} {{template "page-title" dict
+"title" "Page Title" "action" (dict "variant" "primary" "href" "/new" "text"
+"New")}} Params: title — page heading text (required) subtitle — optional gray
+subtitle below the title action — optional dict passed to the button partial
+(renders a button on the right) */}} {{define "page-title"}}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-lg font-bold text-gray-900">{{.title}}</h1>
+    {{if .subtitle}}
+    <p class="text-xs text-gray-400 mt-0.5">{{.subtitle}}</p>
+    {{end}}
+  </div>
+  {{if .action}} {{template "button" .action}} {{end}}
+</div>
+{{end}}
