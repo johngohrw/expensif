@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PillSelect } from './PillSelect';
 
 interface DescriptionCount {
@@ -14,6 +14,7 @@ interface DescriptionPillsProps {
 export function DescriptionPills({ initialCategory, fadeColor }: DescriptionPillsProps) {
   const [descriptions, setDescriptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<number | null>(null);
 
   const fetchDescriptions = useCallback((cat: string) => {
     if (!cat) {
@@ -48,11 +49,23 @@ export function DescriptionPills({ initialCategory, fadeColor }: DescriptionPill
       fetchDescriptions(input.value.trim());
     };
 
+    const handleInput = () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = window.setTimeout(() => {
+        fetchDescriptions(input.value.trim());
+      }, 500);
+    };
+
     input.addEventListener('change', handleChange);
-    input.addEventListener('input', handleChange);
+    input.addEventListener('input', handleInput);
     return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current);
+      }
       input.removeEventListener('change', handleChange);
-      input.removeEventListener('input', handleChange);
+      input.removeEventListener('input', handleInput);
     };
   }, [fetchDescriptions]);
 

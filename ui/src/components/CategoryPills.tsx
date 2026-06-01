@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
-import { PillSelect } from './PillSelect';
+import { useState, useEffect } from "react";
+import { PillSelect } from "./PillSelect";
 
 interface CategoryPillsProps {
   initialCategories?: string[];
   fadeColor?: string;
 }
 
-export function CategoryPills({ initialCategories, fadeColor }: CategoryPillsProps) {
+export function CategoryPills({
+  initialCategories,
+  fadeColor,
+}: CategoryPillsProps) {
   const [categories, setCategories] = useState<string[]>(
     initialCategories || [],
   );
@@ -26,7 +29,7 @@ export function CategoryPills({ initialCategories, fadeColor }: CategoryPillsPro
     ) as HTMLInputElement | null;
     if (input) {
       input.value = option.value;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
     }
   };
 
