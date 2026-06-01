@@ -11,6 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         categoryPills: resolve(__dirname, 'src/entries/category-pills.tsx'),
+        descriptionPills: resolve(__dirname, 'src/entries/description-pills.tsx'),
         dataTable: resolve(__dirname, 'src/entries/data-table.tsx'),
         mobileNav: resolve(__dirname, 'src/entries/mobile-nav.tsx'),
       },

@@ -1,10 +1,10 @@
 import { hydrateRoot } from 'react-dom/client';
 import { CategoryPills } from '../components/CategoryPills';
 
-const container = document.getElementById('category-pills-root');
+const container = document.querySelector('[data-island="category-pills"]') as HTMLElement | null;
 if (!container) {
-  console.error('[island:category-pills] Container #category-pills-root not found');
-  throw new Error('category-pills-root not found');
+  console.error('[island:category-pills] Container [data-island="category-pills"] not found');
+  throw new Error('category-pills island not found');
 }
 
 try {
