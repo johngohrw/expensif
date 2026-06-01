@@ -34,6 +34,7 @@ type PageData struct {
 	Users          []domain.User
 	User           *domain.User
 	PaidByID       int64
+	Timezone       string
 	Islands        []string // Names of React islands to hydrate on this page
 }
 
@@ -70,23 +71,36 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			}
 			return dict, nil
 		},
-		"humanDate": func(dateStr string) string {
+		"humanDate": func(dateStr, tz string) string {
 			t, err := time.Parse("2006-01-02", dateStr)
 			if err != nil {
 				return dateStr
 			}
-			todayStr := time.Now().Format("2006-01-02")
+			loc := time.Local
+			if tz != "" {
+				if l, err := time.LoadLocation(tz); err == nil {
+					loc = l
+				}
+			}
+			now := time.Now().In(loc)
+			todayStr := now.Format("2006-01-02")
 			if dateStr == todayStr {
 				return "Today"
 			}
-			yesterdayStr := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+			yesterdayStr := now.AddDate(0, 0, -1).Format("2006-01-02")
 			if dateStr == yesterdayStr {
 				return "Yesterday"
 			}
 			return humanize.Time(t)
 		},
-		"formatDate": func(dateStr string) string {
-			t, err := time.ParseInLocation("2006-01-02", dateStr, time.Local)
+		"formatDate": func(dateStr, tz string) string {
+			loc := time.Local
+			if tz != "" {
+				if l, err := time.LoadLocation(tz); err == nil {
+					loc = l
+				}
+			}
+			t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
 			if err != nil {
 				return dateStr
 			}

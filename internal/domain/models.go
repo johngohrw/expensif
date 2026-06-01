@@ -18,6 +18,7 @@ type Expense struct {
 type Preferences struct {
 	Currency string `json:"currency"`
 	UserID   int64  `json:"userId"`
+	Timezone string `json:"timezone"`
 }
 
 type User struct {

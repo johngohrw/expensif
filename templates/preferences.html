@@ -45,6 +45,35 @@
       </select>
     </div>
 
+    <div>
+      <label class="block font-medium text-gray-700 mb-2">Timezone</label>
+      <select name="timezone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+        <option value="Pacific/Honolulu" {{if eq .Timezone "Pacific/Honolulu"}}selected{{end}}>Honolulu (UTC-10)</option>
+        <option value="America/Anchorage" {{if eq .Timezone "America/Anchorage"}}selected{{end}}>Anchorage (UTC-9)</option>
+        <option value="America/Los_Angeles" {{if eq .Timezone "America/Los_Angeles"}}selected{{end}}>Los Angeles (UTC-8)</option>
+        <option value="America/Denver" {{if eq .Timezone "America/Denver"}}selected{{end}}>Denver (UTC-7)</option>
+        <option value="America/Chicago" {{if eq .Timezone "America/Chicago"}}selected{{end}}>Chicago (UTC-6)</option>
+        <option value="America/New_York" {{if eq .Timezone "America/New_York"}}selected{{end}}>New York (UTC-5)</option>
+        <option value="America/Sao_Paulo" {{if eq .Timezone "America/Sao_Paulo"}}selected{{end}}>São Paulo (UTC-3)</option>
+        <option value="Atlantic/Azores" {{if eq .Timezone "Atlantic/Azores"}}selected{{end}}>Azores (UTC-1)</option>
+        <option value="UTC" {{if eq .Timezone "UTC"}}selected{{end}}>UTC</option>
+        <option value="Europe/London" {{if eq .Timezone "Europe/London"}}selected{{end}}>London (UTC+0/+1)</option>
+        <option value="Europe/Paris" {{if eq .Timezone "Europe/Paris"}}selected{{end}}>Paris (UTC+1/+2)</option>
+        <option value="Europe/Athens" {{if eq .Timezone "Europe/Athens"}}selected{{end}}>Athens (UTC+2/+3)</option>
+        <option value="Africa/Cairo" {{if eq .Timezone "Africa/Cairo"}}selected{{end}}>Cairo (UTC+2)</option>
+        <option value="Europe/Moscow" {{if eq .Timezone "Europe/Moscow"}}selected{{end}}>Moscow (UTC+3)</option>
+        <option value="Asia/Dubai" {{if eq .Timezone "Asia/Dubai"}}selected{{end}}>Dubai (UTC+4)</option>
+        <option value="Asia/Karachi" {{if eq .Timezone "Asia/Karachi"}}selected{{end}}>Karachi (UTC+5)</option>
+        <option value="Asia/Dhaka" {{if eq .Timezone "Asia/Dhaka"}}selected{{end}}>Dhaka (UTC+6)</option>
+        <option value="Asia/Bangkok" {{if eq .Timezone "Asia/Bangkok"}}selected{{end}}>Bangkok (UTC+7)</option>
+        <option value="Asia/Singapore" {{if eq .Timezone "Asia/Singapore"}}selected{{end}}>Singapore (UTC+8)</option>
+        <option value="Asia/Shanghai" {{if eq .Timezone "Asia/Shanghai"}}selected{{end}}>Shanghai (UTC+8)</option>
+        <option value="Asia/Tokyo" {{if eq .Timezone "Asia/Tokyo"}}selected{{end}}>Tokyo (UTC+9)</option>
+        <option value="Australia/Sydney" {{if eq .Timezone "Australia/Sydney"}}selected{{end}}>Sydney (UTC+10/+11)</option>
+        <option value="Pacific/Auckland" {{if eq .Timezone "Pacific/Auckland"}}selected{{end}}>Auckland (UTC+12/+13)</option>
+      </select>
+    </div>
+
     <div class="flex gap-3 pt-2">
       {{template "button" dict "variant" "primary" "type" "submit" "text" "Save Preferences" "class" "flex-1"}}
       {{template "button" dict "variant" "ghost" "href" "/" "text" "Cancel" "class" "flex-1 text-center"}}

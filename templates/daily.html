@@ -10,8 +10,8 @@
       class="px-3 sm:px-4 py-2 border-b border-gray-100 flex items-center justify-between"
     >
       <div>
-        <h3 class="text-sm font-bold text-gray-900">{{formatDate .Date}}</h3>
-        <p class="text-xs text-gray-400">{{humanDate .Date}}</p>
+        <h3 class="text-sm font-bold text-gray-900">{{formatDate .Date $.Timezone}}</h3>
+        <p class="text-xs text-gray-400">{{humanDate .Date $.Timezone}}</p>
       </div>
     </div>
     {{if .Expenses}} {{- $meta := dict "currency" $.Currency "currencySymbol"

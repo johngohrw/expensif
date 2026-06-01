@@ -13,6 +13,7 @@ services:
       # Override defaults by creating a .env file or setting in Unraid UI
       - PORT=8080
       - DATA_DIR=/data
+      - TZ=UTC
     volumes:
       # Named volume for SQLite persistence
       # In Unraid: map host path /mnt/user/appdata/expensif to /data

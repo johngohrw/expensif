@@ -136,6 +136,16 @@ func migrate(db *sql.DB) error {
 		}
 	}
 
+	var hasTimezone int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('preferences') WHERE name = 'timezone'`).Scan(&hasTimezone); err != nil {
+		return err
+	}
+	if hasTimezone == 0 {
+		if _, err := db.Exec(`ALTER TABLE preferences ADD COLUMN timezone TEXT DEFAULT ''`); err != nil {
+			return err
+		}
+	}
+
 	usersSchema := `
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,

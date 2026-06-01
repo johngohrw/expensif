@@ -20,6 +20,16 @@ func NewHTMLHandler(svc *service.Service, renderer *Renderer) *HTMLHandler {
 	return &HTMLHandler{svc: svc, renderer: renderer}
 }
 
+func nowInTZ(tz string) time.Time {
+	loc := time.Local
+	if tz != "" {
+		if l, err := time.LoadLocation(tz); err == nil {
+			loc = l
+		}
+	}
+	return time.Now().In(loc)
+}
+
 func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData {
 	prefs, err := h.svc.Preferences(ctx)
 	if err != nil {
@@ -31,7 +41,8 @@ func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData 
 		CurrencySymbol: domain.CurrencySymbol(prefs.Currency),
 		Currency:       prefs.Currency,
 		UserID:         prefs.UserID,
-		Today:          time.Now().Format("2006-01-02"),
+		Timezone:       prefs.Timezone,
+		Today:          nowInTZ(prefs.Timezone).Format("2006-01-02"),
 	}
 }
 
@@ -90,7 +101,13 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 	data := h.basePageData(ctx, "calendar")
 
 	earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
-	today := time.Now()
+	loc := time.Local
+	if data.Timezone != "" {
+		if l, err := time.LoadLocation(data.Timezone); err == nil {
+			loc = l
+		}
+	}
+	today := nowInTZ(data.Timezone)
 
 	// Start = earliest expense or 1 year before today, whichever is earlier
 	var start time.Time
@@ -101,11 +118,11 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 	if start.IsZero() || start.After(oneYearAgo) {
 		start = oneYearAgo
 	}
-	start = time.Date(start.Year(), start.Month(), 1, 0, 0, 0, 0, time.Local)
+	start = time.Date(start.Year(), start.Month(), 1, 0, 0, 0, 0, loc)
 
 	// End = today + 1 year
 	end := today.AddDate(1, 0, 0)
-	end = time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, time.Local)
+	end = time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, loc)
 
 	var months []domain.CalendarMonth
 	for m := start; !m.After(end); m = m.AddDate(0, 1, 0) {
@@ -178,10 +195,10 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	date := r.URL.Query().Get("date")
-	if date == "" {
-		date = time.Now().Format("2006-01-02")
-	}
 	data := h.basePageData(ctx, "add")
+	if date == "" {
+		date = data.Today
+	}
 	data.Today = date
 	users, err := h.svc.ListUsers(ctx)
 	if err != nil {
@@ -306,8 +323,9 @@ func (h *HTMLHandler) HandleSavePreferences(w http.ResponseWriter, r *http.Reque
 		currency = "USD"
 	}
 	userID, _ := strconv.ParseInt(r.FormValue("user_id"), 10, 64)
+	timezone := r.FormValue("timezone")
 
-	if err := h.svc.SavePreferences(ctx, currency, userID); err != nil {
+	if err := h.svc.SavePreferences(ctx, currency, userID, timezone); err != nil {
 		data := h.basePageData(ctx, "prefs")
 		data.Flash = "Failed to save preferences"
 		data.FlashError = true

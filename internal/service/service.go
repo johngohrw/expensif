@@ -171,20 +171,38 @@ func (s *Service) Preferences(ctx context.Context) (*domain.Preferences, error) 
 	p, err := s.prefs.GetPreferences(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return &domain.Preferences{Currency: "USD"}, nil
+			return defaultPreferences(), nil
 		}
 		return nil, err
+	}
+	if p.Timezone == "" {
+		p.Timezone = defaultTimezone()
 	}
 	return p, nil
 }
 
-func (s *Service) SavePreferences(ctx context.Context, currency string, userID int64) error {
+func defaultPreferences() *domain.Preferences {
+	return &domain.Preferences{Currency: "USD", Timezone: defaultTimezone()}
+}
+
+func defaultTimezone() string {
+	if loc := time.Local; loc != nil {
+		return loc.String()
+	}
+	return "UTC"
+}
+
+func (s *Service) SavePreferences(ctx context.Context, currency string, userID int64, timezone string) error {
 	if currency == "" {
 		currency = "USD"
+	}
+	if timezone == "" {
+		timezone = defaultTimezone()
 	}
 	return s.prefs.SavePreferences(ctx, domain.Preferences{
 		Currency: currency,
 		UserID:   userID,
+		Timezone: timezone,
 	})
 }
 
