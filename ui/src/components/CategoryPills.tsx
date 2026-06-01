@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { Button } from "./Button";
+import { useState, useEffect } from 'react';
+import { PillSelect } from './PillSelect';
 
 interface CategoryPillsProps {
   initialCategories?: string[];
+  fadeColor?: string;
 }
 
-export function CategoryPills({ initialCategories }: CategoryPillsProps) {
+export function CategoryPills({ initialCategories, fadeColor }: CategoryPillsProps) {
   const [categories, setCategories] = useState<string[]>(
     initialCategories || [],
   );
@@ -19,27 +20,21 @@ export function CategoryPills({ initialCategories }: CategoryPillsProps) {
       .catch(() => {});
   }, [initialCategories]);
 
-  const setCategory = (cat: string) => {
+  const handleSelect = (option: { label: string; value: string }) => {
     const input = document.getElementById(
       "cat-input",
     ) as HTMLInputElement | null;
-    if (input) input.value = cat;
+    if (input) input.value = option.value;
   };
 
-  if (categories.length === 0) return null;
+  const options = categories.map((cat) => ({ label: cat, value: cat }));
 
   return (
-    <div className="flex flex-wrap gap-2 mt-2">
-      {categories.map((cat) => (
-        <Button
-          key={cat}
-          variant="pill"
-          size="xs"
-          onClick={() => setCategory(cat)}
-        >
-          {cat}
-        </Button>
-      ))}
-    </div>
+    <PillSelect
+      options={options}
+      onSelect={handleSelect}
+      fadeColor={fadeColor}
+      className="mt-2"
+    />
   );
 }
