@@ -153,6 +153,31 @@ func (r *sqliteRepo) ListCategories(ctx context.Context) ([]string, error) {
 	return cats, rows.Err()
 }
 
+func (r *sqliteRepo) ListDescriptionsByCategory(ctx context.Context, category string, limit int) ([]domain.DescriptionCount, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT description, COUNT(*) as c
+		FROM expenses
+		WHERE LOWER(category) = LOWER(?) AND description != ''
+		GROUP BY LOWER(description)
+		ORDER BY c DESC
+		LIMIT ?
+	`, category, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.DescriptionCount
+	for rows.Next() {
+		var dc domain.DescriptionCount
+		if err := rows.Scan(&dc.Description, &dc.Count); err != nil {
+			return nil, err
+		}
+		results = append(results, dc)
+	}
+	return results, rows.Err()
+}
+
 func (r *sqliteRepo) SummaryByCategory(ctx context.Context) (map[string]float64, error) {
 	rows, err := r.db.QueryContext(ctx, `SELECT category, SUM(amount) FROM expenses GROUP BY category`)
 	if err != nil {

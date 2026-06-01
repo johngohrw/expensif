@@ -48,3 +48,8 @@ type CalendarMonth struct {
 	HasToday bool           `json:"hasToday"`
 	Cells    []CalendarCell `json:"cells"`
 }
+
+type DescriptionCount struct {
+	Description string `json:"description"`
+	Count       int    `json:"count"`
+}

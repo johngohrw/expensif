@@ -43,6 +43,7 @@ func NewServer(api *APIHandler, html *HTMLHandler, port string) *Server {
 	mux.HandleFunc("PUT /api/expenses/{id}", api.HandleUpdate)
 	mux.HandleFunc("DELETE /api/expenses/{id}", api.HandleDelete)
 	mux.HandleFunc("GET /api/categories", api.HandleCategories)
+	mux.HandleFunc("GET /api/expenses/descriptions", api.HandleDescriptions)
 	mux.HandleFunc("GET /api/summary", api.HandleSummary)
 
 	if port == "" {

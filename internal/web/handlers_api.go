@@ -122,6 +122,20 @@ func (h *APIHandler) HandleCategories(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, apiResponse{Data: cats})
 }
 
+func (h *APIHandler) HandleDescriptions(w http.ResponseWriter, r *http.Request) {
+	category := r.URL.Query().Get("category")
+	if category == "" {
+		writeJSON(w, http.StatusBadRequest, apiResponse{Error: "category is required"})
+		return
+	}
+	descs, err := h.svc.ListDescriptionsByCategory(r.Context(), category, 20)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiResponse{Error: err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, apiResponse{Data: descs})
+}
+
 func (h *APIHandler) HandleSummary(w http.ResponseWriter, r *http.Request) {
 	total, err := h.svc.TotalExpenses(r.Context())
 	if err != nil {

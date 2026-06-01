@@ -24,7 +24,10 @@ export function CategoryPills({ initialCategories, fadeColor }: CategoryPillsPro
     const input = document.getElementById(
       "cat-input",
     ) as HTMLInputElement | null;
-    if (input) input.value = option.value;
+    if (input) {
+      input.value = option.value;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   };
 
   const options = categories.map((cat) => ({ label: cat, value: cat }));

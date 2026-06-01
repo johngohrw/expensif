@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -126,6 +127,31 @@ func (r *mockRepo) ListCategories(_ context.Context) ([]string, error) {
 		return cats[i] < cats[j]
 	})
 	return cats, nil
+}
+
+func (r *mockRepo) ListDescriptionsByCategory(_ context.Context, category string, limit int) ([]domain.DescriptionCount, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	freq := make(map[string]int)
+	for _, e := range r.expenses {
+		if strings.EqualFold(e.Category, category) && e.Description != "" {
+			freq[strings.ToLower(e.Description)]++
+		}
+	}
+	var results []domain.DescriptionCount
+	for desc, count := range freq {
+		results = append(results, domain.DescriptionCount{Description: desc, Count: count})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		if results[i].Count != results[j].Count {
+			return results[i].Count > results[j].Count
+		}
+		return results[i].Description < results[j].Description
+	})
+	if len(results) > limit {
+		results = results[:limit]
+	}
+	return results, nil
 }
 
 func (r *mockRepo) SummaryByCategory(_ context.Context) (map[string]float64, error) {

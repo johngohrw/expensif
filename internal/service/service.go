@@ -119,6 +119,13 @@ func (s *Service) ListCategories(ctx context.Context) ([]string, error) {
 	return s.expenses.ListCategories(ctx)
 }
 
+func (s *Service) ListDescriptionsByCategory(ctx context.Context, category string, limit int) ([]domain.DescriptionCount, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	return s.expenses.ListDescriptionsByCategory(ctx, category, limit)
+}
+
 func (s *Service) SummaryByCategory(ctx context.Context) (map[string]float64, error) {
 	return s.expenses.SummaryByCategory(ctx)
 }
