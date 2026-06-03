@@ -12,6 +12,7 @@ import (
 
 	"expensif/internal/assets"
 	"expensif/internal/db"
+	"expensif/internal/rate"
 	"expensif/internal/repository"
 	"expensif/internal/service"
 	"expensif/internal/web"
@@ -32,7 +33,7 @@ func main() {
 		Users:       repo,
 		Preferences: repo,
 		Rates:       repo,
-	})
+	}, rate.NewClient())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

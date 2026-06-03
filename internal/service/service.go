@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"expensif/internal/domain"
-	"expensif/internal/rate"
 	"expensif/internal/repository"
 )
 
@@ -21,21 +20,25 @@ var (
 	ErrNoRates            = errors.New("no exchange rates available")
 )
 
+type RateFetcher interface {
+	Latest(ctx context.Context, base string) (map[string]float64, string, error)
+}
+
 type Service struct {
 	expenses   repository.ExpenseRepository
 	users      repository.UserRepository
 	prefs      repository.PreferenceRepository
 	rates      repository.RateRepository
-	rateClient *rate.Client
+	rateClient RateFetcher
 }
 
-func New(repos repository.Repos) *Service {
+func New(repos repository.Repos, rateClient RateFetcher) *Service {
 	return &Service{
 		expenses:   repos.Expenses,
 		users:      repos.Users,
 		prefs:      repos.Preferences,
 		rates:      repos.Rates,
-		rateClient: rate.NewClient(),
+		rateClient: rateClient,
 	}
 }
 

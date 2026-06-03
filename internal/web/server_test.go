@@ -17,7 +17,7 @@ func TestServerShutdownBeforeRun(t *testing.T) {
 		Users:       repo,
 		Preferences: repo,
 		Rates:       repo,
-	})
+	}, &mockRateClient{})
 	api := NewAPIHandler(svc)
 	html := NewHTMLHandler(svc, nil)
 
@@ -39,7 +39,7 @@ func TestServerRunAndShutdown(t *testing.T) {
 		Users:       repo,
 		Preferences: repo,
 		Rates:       repo,
-	})
+	}, &mockRateClient{})
 	api := NewAPIHandler(svc)
 
 	renderer, err := NewRenderer("../../templates", false, nil)

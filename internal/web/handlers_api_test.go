@@ -21,7 +21,7 @@ func newTestAPIHandler() (*APIHandler, *mockRepo) {
 		Users:       repo,
 		Preferences: repo,
 		Rates:       repo,
-	})
+	}, &mockRateClient{})
 	return NewAPIHandler(svc), repo
 }
 

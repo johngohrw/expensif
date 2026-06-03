@@ -11,6 +11,7 @@ import (
 
 	"expensif/internal/domain"
 	"expensif/internal/repository"
+	"expensif/internal/service"
 )
 
 // mockRepo is an in-memory implementation of repository.Repository for testing.
@@ -308,8 +309,20 @@ func (r *mockRepo) seed() {
 }
 
 // ensure mockRepo implements all repository interfaces at compile time.
+// mockRateClient is a test double for service.RateFetcher.
+type mockRateClient struct {
+	rates map[string]float64
+	date  string
+	err   error
+}
+
+func (m *mockRateClient) Latest(ctx context.Context, base string) (map[string]float64, string, error) {
+	return m.rates, m.date, m.err
+}
+
 var _ repository.Repository = (*mockRepo)(nil)
 var _ repository.ExpenseRepository = (*mockRepo)(nil)
 var _ repository.UserRepository = (*mockRepo)(nil)
 var _ repository.PreferenceRepository = (*mockRepo)(nil)
 var _ repository.RateRepository = (*mockRepo)(nil)
+var _ service.RateFetcher = (*mockRateClient)(nil)
