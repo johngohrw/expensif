@@ -62,8 +62,8 @@ func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 			))
 		}
 	}
-	// Fail loudly in production — missing manifest entry is a build bug.
-	panic(fmt.Sprintf("manifest entry not found: %s", entry))
+	// Missing manifest entry is a build bug, but don't crash the server.
+	return template.HTML(fmt.Sprintf("<!-- missing manifest entry: %s -->", entry))
 }
 
 // DevClient returns the React Refresh preamble and Vite HMR client in development.

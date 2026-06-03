@@ -43,6 +43,7 @@ func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData 
 		UserID:         prefs.UserID,
 		Timezone:       prefs.Timezone,
 		Today:          nowInTZ(prefs.Timezone).Format("2006-01-02"),
+		Islands:        []string{"mobile-nav"},
 	}
 }
 
@@ -91,7 +92,7 @@ func (h *HTMLHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 
 	total, _ := h.svc.TotalExpenses(ctx)
 	data.Total = total
-	data.Islands = []string{"data-table"}
+	data.Islands = append(data.Islands, "data-table")
 
 	h.render(w, "list", data)
 }
@@ -188,7 +189,7 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data.DailyGroups = groups
-	data.Islands = []string{"data-table"}
+	data.Islands = append(data.Islands, "data-table")
 	h.render(w, "daily", data)
 }
 
@@ -207,7 +208,7 @@ func (h *HTMLHandler) HandleAdd(w http.ResponseWriter, r *http.Request) {
 	data.Users = users
 	// Pre-select current user from preferences
 	data.PaidByID = data.UserID
-	data.Islands = []string{"category-pills", "description-pills"}
+	data.Islands = append(data.Islands, "category-pills", "description-pills")
 	h.render(w, "add", data)
 }
 
@@ -240,7 +241,7 @@ func (h *HTMLHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
-		data.Islands = []string{"category-pills", "description-pills"}
+		data.Islands = append(data.Islands, "category-pills", "description-pills")
 		h.render(w, "add", data)
 		return
 	}
@@ -267,7 +268,7 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to list users", "error", err)
 	}
 	data.Users = users
-	data.Islands = []string{"category-pills", "description-pills"}
+	data.Islands = append(data.Islands, "category-pills", "description-pills")
 	h.render(w, "edit", data)
 }
 
@@ -301,7 +302,7 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 		data.FlashError = true
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
-		data.Islands = []string{"category-pills", "description-pills"}
+		data.Islands = append(data.Islands, "category-pills", "description-pills")
 		h.render(w, "edit", data)
 		return
 	}
@@ -344,12 +345,16 @@ func (h *HTMLHandler) HandleSavePreferences(w http.ResponseWriter, r *http.Reque
 		data := h.basePageData(ctx, "prefs")
 		data.Flash = "Failed to save preferences"
 		data.FlashError = true
+		users, _ := h.svc.ListUsers(ctx)
+		data.Users = users
 		h.render(w, "prefs", data)
 		return
 	}
 
 	data := h.basePageData(ctx, "prefs")
 	data.Flash = "Preferences saved"
+	users, _ := h.svc.ListUsers(ctx)
+	data.Users = users
 	h.render(w, "prefs", data)
 }
 
@@ -364,7 +369,7 @@ func (h *HTMLHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 	data := h.basePageData(ctx, "users")
 	data.Users = users
-	data.Islands = []string{"data-table"}
+	data.Islands = append(data.Islands, "data-table")
 	h.render(w, "users", data)
 }
 
