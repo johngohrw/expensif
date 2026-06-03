@@ -230,6 +230,14 @@ func (h *HTMLHandler) HandleCreate(w http.ResponseWriter, r *http.Request) {
 		data.Flash = err.Error()
 		data.FlashError = true
 		data.Today = date
+		data.Expense = &domain.Expense{
+			Amount:      amount,
+			Category:    category,
+			Description: description,
+			Date:        date,
+			Currency:    currency,
+			PaidByID:    paidByID,
+		}
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
 		data.Islands = []string{"category-pills", "description-pills"}
@@ -279,9 +287,16 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err := h.svc.UpdateExpense(ctx, id, amount, category, description, date, currency, paidByID)
 	if err != nil {
-		expense, _ := h.svc.GetExpense(ctx, id)
 		data := h.basePageData(ctx, "edit")
-		data.Expense = expense
+		data.Expense = &domain.Expense{
+			ID:          id,
+			Amount:      amount,
+			Category:    category,
+			Description: description,
+			Date:        date,
+			Currency:    currency,
+			PaidByID:    paidByID,
+		}
 		data.Flash = err.Error()
 		data.FlashError = true
 		users, _ := h.svc.ListUsers(ctx)
