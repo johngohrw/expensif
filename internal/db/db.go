@@ -102,8 +102,8 @@ func migrate(db *sql.DB) error {
 					paid_by INTEGER,
 					created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 				);
-				INSERT INTO expenses_new (id, amount, category, description, date, currency, created_at)
-					SELECT id, amount, category, description, date, currency, created_at FROM expenses;
+				INSERT INTO expenses_new (id, amount, category, description, date, currency, paid_by, created_at)
+					SELECT id, amount, category, description, date, currency, paid_by, created_at FROM expenses;
 				DROP TABLE expenses;
 				ALTER TABLE expenses_new RENAME TO expenses;
 				CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
