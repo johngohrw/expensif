@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	ErrInvalidAmount      = errors.New("amount must be greater than 0")
-	ErrMissingCategory    = errors.New("category is required")
-	ErrMissingDescription = errors.New("description is required")
-	ErrNoRates            = errors.New("no exchange rates available")
+	ErrInvalidAmount      = errors.New("Amount must be greater than 0")
+	ErrMissingCategory    = errors.New("Category is required")
+	ErrMissingDescription = errors.New("Description is required")
+	ErrNoRates            = errors.New("No exchange rates available")
 )
 
 type RateFetcher interface {
@@ -44,17 +44,17 @@ func New(repos repository.Repos, rateClient RateFetcher) *Service {
 
 // --- Expenses ---
 
-func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency string, paidByID int64) (int64, error) {
+func validateExpenseInput(amount float64, category, description, date, currency string) (string, string, string, string, error) {
 	if amount <= 0 {
-		return 0, ErrInvalidAmount
+		return "", "", "", "", ErrInvalidAmount
 	}
 	category = strings.TrimSpace(category)
 	description = strings.TrimSpace(description)
 	if category == "" {
-		return 0, ErrMissingCategory
+		return "", "", "", "", ErrMissingCategory
 	}
 	if description == "" {
-		return 0, ErrMissingDescription
+		return "", "", "", "", ErrMissingDescription
 	}
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
@@ -62,13 +62,21 @@ func (s *Service) CreateExpense(ctx context.Context, amount float64, category, d
 	if currency == "" {
 		currency = "USD"
 	}
+	return category, description, date, currency, nil
+}
+
+func (s *Service) CreateExpense(ctx context.Context, amount float64, category, description, date, currency string, paidByID int64) (int64, error) {
+	category, description, date, currency, err := validateExpenseInput(amount, category, description, date, currency)
+	if err != nil {
+		return 0, err
+	}
 	e := domain.Expense{
-		Amount:   amount,
-		Category: category,
+		Amount:      amount,
+		Category:    category,
 		Description: description,
-		Date:     date,
-		Currency: currency,
-		PaidByID: paidByID,
+		Date:        date,
+		Currency:    currency,
+		PaidByID:    paidByID,
 	}
 	return s.expenses.CreateExpense(ctx, e)
 }
@@ -85,22 +93,9 @@ func (s *Service) GetExpense(ctx context.Context, id int64) (*domain.Expense, er
 }
 
 func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency string, paidByID int64) error {
-	if amount <= 0 {
-		return ErrInvalidAmount
-	}
-	category = strings.TrimSpace(category)
-	description = strings.TrimSpace(description)
-	if category == "" {
-		return ErrMissingCategory
-	}
-	if description == "" {
-		return ErrMissingDescription
-	}
-	if date == "" {
-		date = time.Now().Format("2006-01-02")
-	}
-	if currency == "" {
-		currency = "USD"
+	category, description, date, currency, err := validateExpenseInput(amount, category, description, date, currency)
+	if err != nil {
+		return err
 	}
 	e := domain.Expense{
 		ID:          id,

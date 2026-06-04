@@ -140,7 +140,7 @@ func TestAPICreate_MissingCategory(t *testing.T) {
 	if resp.Error == "" {
 		t.Fatal("expected error message")
 	}
-	if !strings.Contains(resp.Error, "category") {
+	if !strings.Contains(strings.ToLower(resp.Error), "category") {
 		t.Fatalf("expected category validation error, got: %s", resp.Error)
 	}
 }
@@ -159,7 +159,7 @@ func TestAPICreate_InvalidAmount(t *testing.T) {
 		t.Fatalf("expected 400, got %d", rr.Code)
 	}
 	resp := parseAPIResponse(t, rr)
-	if !strings.Contains(resp.Error, "amount") {
+	if !strings.Contains(strings.ToLower(resp.Error), "amount") {
 		t.Fatalf("expected amount validation error, got: %s", resp.Error)
 	}
 }
