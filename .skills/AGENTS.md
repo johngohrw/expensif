@@ -1,27 +1,30 @@
-# Bag of Skills
+# Agent Skills
 
-This repo is a collection of reusable coding agent skills. It is not a runnable
-project — it is a shared library of capabilities.
+This project includes a `.skills/` directory containing reusable agent capabilities, following the [Agent Skills standard](https://agentskills.io). These are available for use within this project.
 
-## Convention
-Each skill lives in its own directory with a `SKILL.md` file, following the
-[Agent Skills standard](https://agentskills.io).
+## Available Skills
 
-## Skills included
-- `save-session` — persist session state to `.context/`
-- `resume-session` — read `.context/` to resume work
-- `plan-then-build` — collaborative planning before coding
-- `generate-commit-message` — conventional commit drafting
-- `arch-review` — deep codebase analysis
-- `spec-gen` — generate comprehensive project specs
+| Skill | Description |
+|-------|-------------|
+| `save-session` | Persist session state to `.context/` |
+| `resume-session` | Read `.context/` to resume work |
+| `plan-then-build` | Collaborative planning before coding |
+| `generate-commit-message` | Conventional commit drafting |
+| `arch-review` | Deep codebase analysis |
+| `spec-gen` | Generate comprehensive project specs |
 
-## Usage in projects
-Projects clone this repo into `.skills/`. Skills read and write to the
-project's own `.context/` directory.
+## `.context/` Convention
 
-## Updating
-Projects can update their skills with:
+Skills read from and write to a `.context/` directory at the project root. This directory serves as persistent memory for session summaries, architecture decisions, and project specs across agent sessions.
+
+If `.context/` does not exist, create it when a skill requires it.
+
+## Updating Skills
+
+To update the skills in this project:
+
 ```bash
 cd .skills && git pull
 ```
+
 Or run `.skills/update.sh` if available.
