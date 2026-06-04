@@ -389,6 +389,7 @@ func (h *HTMLHandler) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
 	_, err := h.svc.CreateUser(ctx, name)
 	if err != nil {
 		data := h.basePageData(ctx, "users")
+		data.User = &domain.User{Name: name}
 		data.Flash = err.Error()
 		data.FlashError = true
 		h.render(w, "user_form", data)
@@ -420,9 +421,8 @@ func (h *HTMLHandler) HandleUserUpdate(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	err := h.svc.UpdateUser(ctx, id, name)
 	if err != nil {
-		user, _ := h.svc.GetUser(ctx, id)
 		data := h.basePageData(ctx, "users")
-		data.User = user
+		data.User = &domain.User{ID: id, Name: name}
 		data.Flash = err.Error()
 		data.FlashError = true
 		h.render(w, "user_form", data)
