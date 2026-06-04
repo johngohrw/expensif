@@ -25,7 +25,7 @@ Analyze the current staged changes, recent commit style, and project context to 
    ```bash
    ls -1 .context/ | sort
    ```
-   Read the 2–4 most recent `.context/` files to understand recent work and decisions.
+   Read the most recent `.context/` files, up to 6, to understand recent work and decisions.
 
 4. **Analyze and synthesize**
    - Group changes into logical themes (e.g., "dev workflow", "new feature", "refactor", "bugfix")
@@ -50,7 +50,7 @@ Analyze the current staged changes, recent commit style, and project context to 
 - Do NOT commit automatically — always wait for explicit user confirmation.
 - If there are unrelated changes mixed together, warn the user and suggest splitting.
 - Match the style of recent commits (check `git log --oneline`).
-- If `.context/` exists, use it — it contains the "why" behind the changes.
+- If `.context/` exists, use it — it contains the "why" behind the changes. If it does not exist, create it.
 - For delete operations, mention what was removed and why.
 - For new files, mention their purpose, not just their names.
 - Keep bullet points parallel in structure (start with verb, same tense).

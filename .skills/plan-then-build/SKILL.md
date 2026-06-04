@@ -1,9 +1,9 @@
 ---
-name: plan-and-implement
+name: plan-then-build
 description: Collaborative feature planning and implementation skill. The user brings an idea; you analyze the codebase, surface options, grill the user (and yourself) on tradeoffs, and only write code once the plan is fully crystallized and explicitly approved. Use for any new feature, significant refactor, or architectural change.
 ---
 
-# Plan & Implement
+# Plan Then Build
 
 Turn a feature idea into a mature, agreed-upon implementation plan before any code is written. This skill is a structured conversation, not a code generator.
 
@@ -37,7 +37,7 @@ If the request is vague, ask clarifying questions before moving on.
 
 Explore the codebase to ground your recommendations in reality. Do not skip this step even if you think you know the project.
 
-1. Read `.context/` files (latest 4–6) for recent decisions and state.
+1. Read the most recent `.context/` files, up to 6, for recent decisions and state. Create `.context/` if it does not exist.
 2. List top-level directories and identify the tech stack.
 3. Read entry points, core domain types, and interfaces.
 4. Read any files you suspect this feature will touch.

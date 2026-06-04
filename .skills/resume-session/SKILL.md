@@ -1,9 +1,9 @@
 ---
-name: get-up-to-speed
+name: resume-session
 description: Reads the latest timestamped context files from .context/ to understand the current project state, tech stack, recent changes, and blockers before continuing development. Use at the start of any session when you need to catch up on where the project stands.
 ---
 
-# Get Up To Speed
+# Resume Session
 
 Load the most recent context files and summarize the project state so we can continue development without losing continuity.
 
@@ -14,7 +14,7 @@ Load the most recent context files and summarize the project state so we can con
    ls -1 .context/ | sort
    ```
 
-2. **Read the latest 8 files** (or fewer if less exist), prioritizing the most recent timestamps. Use the `read` tool on each.
+2. **Read the most recent `.context/` files**, up to 6, prioritizing the latest timestamps. Use the `read` tool on each.
 
 3. **Synthesize a summary** covering:
    - **Project overview** — what is this, who uses it
@@ -33,7 +33,7 @@ Load the most recent context files and summarize the project state so we can con
 ## Rules
 
 - Always read from `.context/`; do not rely on memory from previous turns.
-- If `.context/` does not exist, ask the user where session notes are stored.
+- If `.context/` does not exist, create it.
 - If a file is too large, read it in chunks using offset/limit.
 - Cross-reference dates in filenames to establish chronological order.
 - Note any uncommitted specs or architecture docs that are **not yet implemented** so they are not mistaken for active code.

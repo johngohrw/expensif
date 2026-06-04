@@ -63,7 +63,7 @@ Persist the current session's work, decisions, and state to a timestamped markdo
 
 ## Rules
 
-- Always write to `.context/`, never overwrite existing files without checking.
+- Always write to `.context/`. Create the directory if it does not exist. Never overwrite existing files without checking.
 - Include test counts before and after if tests were added or removed.
 - If no changes were made (e.g., pure exploration), still document findings and candidates.
 - Note any skills created during the session and their locations.

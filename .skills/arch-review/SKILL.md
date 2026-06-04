@@ -1,15 +1,15 @@
 ---
-name: architecture-review
+name: arch-review
 description: Deeply analyze a codebase for architectural improvements, refactoring opportunities, and testability issues. Walks through exploration, candidate presentation, and a collaborative implementation loop with the user. Use when the codebase feels messy, untested, hard to navigate, or when preparing for feature work that touches core structures.
 ---
 
-# Architecture Review & Improvement
+# Arch Review
 
 Analyze the current codebase to find deepening opportunities, refactoring candidates, and ways to make it more testable and AI-navigable. Then collaborate with the user to implement the best ones.
 
 ## Prerequisites
 
-If a `.context/` folder exists, read the latest timestamped files first to understand recent decisions, state, and known issues.
+Read the latest timestamped files from `.context/` first to understand recent decisions, state, and known issues. Create `.context/` if it does not exist.
 
 ## Phase 1: Exploration
 
