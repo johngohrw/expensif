@@ -13,6 +13,7 @@ interface PillSelectProps {
   value?: string;
   fadeColor?: string;
   className?: string;
+  loading?: boolean;
 }
 
 export function PillSelect({
@@ -21,6 +22,7 @@ export function PillSelect({
   value,
   fadeColor = '#ffffff',
   className = '',
+  loading = false,
 }: PillSelectProps) {
   const [scrolled, setScrolled] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -49,7 +51,28 @@ export function PillSelect({
     setScrolled(el.scrollLeft > 0);
   }, []);
 
-  if (options.length === 0) return null;
+  // Loading and "resolved but empty" both render the same px-3 py-1 text-xs
+  // row shape as a real pill, so the row's height never changes across
+  // loading -> pills or loading -> no-suggestions transitions.
+  if (loading) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="flex items-center pb-1">
+          <span className="text-xs text-gray-400 px-3 py-1 animate-pulse">Loading…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (options.length === 0) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="flex items-center pb-1">
+          <span className="text-xs text-gray-400 px-3 py-1">No suggestions</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`}>

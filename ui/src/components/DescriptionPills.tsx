@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PillSelect } from './PillSelect';
+import { useDebouncedInputValue } from '../lib/useDebouncedInputValue';
 
 interface DescriptionCount {
   description: string;
@@ -15,6 +16,7 @@ export function DescriptionPills({ initialCategory, fadeColor }: DescriptionPill
   const [descriptions, setDescriptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<number | null>(null);
+  const query = useDebouncedInputValue('description-input', 150);
 
   const fetchDescriptions = useCallback((cat: string) => {
     if (!cat) {
@@ -76,21 +78,19 @@ export function DescriptionPills({ initialCategory, fadeColor }: DescriptionPill
     if (input) input.value = option.value;
   };
 
-  const options = descriptions.map((d) => ({ label: d, value: d }));
+  const filtered = query
+    ? descriptions.filter((d) => d.toLowerCase().includes(query))
+    : descriptions;
+
+  const options = filtered.map((d) => ({ label: d, value: d }));
 
   return (
-    <>
-      {loading && (
-        <div className="mt-2 text-xs text-gray-400">Loading...</div>
-      )}
-      {!loading && (
-        <PillSelect
-          options={options}
-          onSelect={handleSelect}
-          fadeColor={fadeColor}
-          className="mt-2"
-        />
-      )}
-    </>
+    <PillSelect
+      options={options}
+      onSelect={handleSelect}
+      fadeColor={fadeColor}
+      className="mt-2"
+      loading={loading}
+    />
   );
 }

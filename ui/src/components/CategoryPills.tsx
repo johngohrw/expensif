@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PillSelect } from "./PillSelect";
+import { useDebouncedInputValue } from "../lib/useDebouncedInputValue";
 
 interface CategoryPillsProps {
   initialCategories?: string[];
@@ -13,6 +14,7 @@ export function CategoryPills({
   const [categories, setCategories] = useState<string[]>(
     initialCategories || [],
   );
+  const query = useDebouncedInputValue("cat-input", 150);
 
   useEffect(() => {
     if (initialCategories && initialCategories.length > 0) return;
@@ -33,7 +35,11 @@ export function CategoryPills({
     }
   };
 
-  const options = categories.map((cat) => ({ label: cat, value: cat }));
+  const filtered = query
+    ? categories.filter((cat) => cat.toLowerCase().includes(query))
+    : categories;
+
+  const options = filtered.map((cat) => ({ label: cat, value: cat }));
 
   return (
     <PillSelect
