@@ -58,6 +58,43 @@
   </div>
 </div>
 {{range .Islands}}{{script .}}{{end}}
+<script>
+  (function () {
+    var inputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+    inputs.forEach(function (input) {
+      if (input.dataset.clearable) return;
+      input.dataset.clearable = "true";
+
+      var wrapper = document.createElement("div");
+      wrapper.className = "relative";
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      input.classList.add("pr-8");
+
+      var clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.setAttribute("aria-label", "Clear");
+      clearBtn.className =
+        "hidden absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none px-1";
+      clearBtn.textContent = "×";
+      wrapper.appendChild(clearBtn);
+
+      function updateVisibility() {
+        clearBtn.classList.toggle("hidden", !input.value);
+      }
+
+      clearBtn.addEventListener("click", function () {
+        input.value = "";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.focus();
+        updateVisibility();
+      });
+
+      input.addEventListener("input", updateVisibility);
+      updateVisibility();
+    });
+  })();
+</script>
 </body>
 </html>
 {{end}}
