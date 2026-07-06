@@ -110,9 +110,17 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			return t.Format("Jan 2, Monday")
 		},
 		"currencySymbol": domain.CurrencySymbol,
-		"script":         func(entry string) template.HTML { return helper.ScriptTag(entry) },
-		"devClient":      func() template.HTML { return helper.DevClient() },
-		"safeHTML":       func(s string) template.HTML { return template.HTML(s) },
+		"formatAmount":   domain.FormatAmount,
+		"currencyDecimalsJSON": func() template.JS {
+			b, err := json.Marshal(domain.AllCurrencyDecimals())
+			if err != nil {
+				return template.JS("{}")
+			}
+			return template.JS(b)
+		},
+		"script":    func(entry string) template.HTML { return helper.ScriptTag(entry) },
+		"devClient": func() template.HTML { return helper.DevClient() },
+		"safeHTML":  func(s string) template.HTML { return template.HTML(s) },
 		"json": func(v interface{}) (string, error) {
 			b, err := json.Marshal(v)
 			if err != nil {

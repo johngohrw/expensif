@@ -3,7 +3,7 @@
   <div class="space-y-4">
     <div>
       <label class="block font-medium text-gray-700 mb-1">Amount</label>
-      <input type="number" name="amount" step="0.01" value="{{if .Expense}}{{printf "%.2f" .Expense.Amount}}{{end}}" placeholder="0.00" required autofocus
+      <input type="text" inputmode="numeric" id="amount-input" name="amount" value="{{if .Expense}}{{formatAmount .Expense.Amount .Expense.Currency}}{{end}}" placeholder="0.00" required autofocus
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
     </div>
     <div>
@@ -20,7 +20,7 @@
     </div>
     <div>
       <label class="block font-medium text-gray-700 mb-1">Currency</label>
-      <select name="currency" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <select id="currency-select" name="currency" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         {{$sel := .Currency}}{{if .Expense}}{{$sel = .Expense.Currency}}{{end}}
         <option value="MYR" {{if eq $sel "MYR"}}selected{{end}}>Malaysian Ringgit (RM)</option>
         <option value="USD" {{if eq $sel "USD"}}selected{{end}}>US Dollar ($)</option>
@@ -71,4 +71,36 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    var currencyDecimals = {{currencyDecimalsJSON}};
+    var amountInput = document.getElementById("amount-input");
+    var currencySelect = document.getElementById("currency-select");
+
+    function decimalsFor(code) {
+      return currencyDecimals[code] !== undefined ? currencyDecimals[code] : 2;
+    }
+
+    // Treats the field as a running digit buffer: every digit typed shifts
+    // in from the right, with the decimal point placed by the currency's
+    // minor-unit count (e.g. "12370" -> "123.70", or "400" -> "400" for JPY).
+    function reformat() {
+      var digits = amountInput.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+      if (!digits) {
+        amountInput.value = "";
+        return;
+      }
+      var decimals = decimalsFor(currencySelect.value);
+      var cents = parseInt(digits, 10);
+      amountInput.value =
+        decimals === 0
+          ? String(cents)
+          : (cents / Math.pow(10, decimals)).toFixed(decimals);
+    }
+
+    amountInput.addEventListener("input", reformat);
+    currencySelect.addEventListener("change", reformat);
+  })();
+</script>
 {{end}}
