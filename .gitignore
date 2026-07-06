@@ -48,3 +48,5 @@ tmp/
 
 # Node dependencies
 /ui/node_modules/
+# iudex workspace state
+.iudex/
