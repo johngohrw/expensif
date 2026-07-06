@@ -92,6 +92,10 @@ func (s *Service) GetExpense(ctx context.Context, id int64) (*domain.Expense, er
 	return s.expenses.GetExpense(ctx, id)
 }
 
+func (s *Service) ExpensesInRange(ctx context.Context, start, end string) ([]domain.Expense, error) {
+	return s.expenses.ListExpensesInRange(ctx, start, end)
+}
+
 func (s *Service) UpdateExpense(ctx context.Context, id int64, amount float64, category, description, date, currency string, paidByID int64) error {
 	category, description, date, currency, err := validateExpenseInput(amount, category, description, date, currency)
 	if err != nil {

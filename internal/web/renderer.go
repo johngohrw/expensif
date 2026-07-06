@@ -35,6 +35,9 @@ type PageData struct {
 	User           *domain.User
 	PaidByID       int64
 	Timezone       string
+	FilterDate     string
+	BackHref       string
+	BackLabel      string
 	Islands        []string // Names of React islands to hydrate on this page
 }
 
@@ -107,9 +110,9 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			return t.Format("Jan 2, Monday")
 		},
 		"currencySymbol": domain.CurrencySymbol,
-		"script":    func(entry string) template.HTML { return helper.ScriptTag(entry) },
-		"devClient": func() template.HTML { return helper.DevClient() },
-		"safeHTML": func(s string) template.HTML { return template.HTML(s) },
+		"script":         func(entry string) template.HTML { return helper.ScriptTag(entry) },
+		"devClient":      func() template.HTML { return helper.DevClient() },
+		"safeHTML":       func(s string) template.HTML { return template.HTML(s) },
 		"json": func(v interface{}) (string, error) {
 			b, err := json.Marshal(v)
 			if err != nil {

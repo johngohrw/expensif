@@ -66,6 +66,41 @@ func (r *sqliteRepo) ListExpenses(ctx context.Context, limit int) ([]domain.Expe
 	return expenses, rows.Err()
 }
 
+func (r *sqliteRepo) ListExpensesInRange(ctx context.Context, start, end string) ([]domain.Expense, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT e.id, e.amount, e.category, e.description, e.date, e.currency, e.paid_by, u.name, e.created_at
+		 FROM expenses e
+		 LEFT JOIN users u ON e.paid_by = u.id
+		 WHERE e.date BETWEEN ? AND ?
+		 ORDER BY e.date DESC, e.created_at DESC`,
+		start, end,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var expenses []domain.Expense
+	for rows.Next() {
+		var e domain.Expense
+		var createdAt string
+		var paidBy sql.NullInt64
+		var paidByName sql.NullString
+		if err := rows.Scan(&e.ID, &e.Amount, &e.Category, &e.Description, &e.Date, &e.Currency, &paidBy, &paidByName, &createdAt); err != nil {
+			return nil, err
+		}
+		if paidBy.Valid {
+			e.PaidByID = paidBy.Int64
+		}
+		if paidByName.Valid {
+			e.PaidByName = paidByName.String
+		}
+		e.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+		expenses = append(expenses, e)
+	}
+	return expenses, rows.Err()
+}
+
 func (r *sqliteRepo) GetExpense(ctx context.Context, id int64) (*domain.Expense, error) {
 	var e domain.Expense
 	var createdAt string

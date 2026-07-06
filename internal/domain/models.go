@@ -39,9 +39,14 @@ type DailyGroup struct {
 }
 
 type CalendarCell struct {
-	Day     int    `json:"day"`
-	Date    string `json:"date"`
-	IsToday bool   `json:"isToday"`
+	Day          int     `json:"day"`
+	Date         string  `json:"date"`
+	IsToday      bool    `json:"isToday"`
+	Total        float64 `json:"total"`
+	Count        int     `json:"count"`
+	HeatLevel    int     `json:"heatLevel"`    // 0 = no spend, 1-5 = quintile of spend among days with any spend
+	HeatColor    string  `json:"heatColor"`    // blob hex color for HeatLevel, "" when HeatLevel is 0
+	HeatDiameter int     `json:"heatDiameter"` // blob diameter in px for HeatLevel, 0 when HeatLevel is 0
 }
 
 type CalendarMonth struct {

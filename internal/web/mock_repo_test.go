@@ -66,6 +66,23 @@ func (r *mockRepo) ListExpenses(_ context.Context, limit int) ([]domain.Expense,
 	return result, nil
 }
 
+func (r *mockRepo) ListExpensesInRange(_ context.Context, start, end string) ([]domain.Expense, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var result []domain.Expense
+	for _, e := range r.expenses {
+		if e.Date >= start && e.Date <= end {
+			if e.PaidByID != 0 {
+				if name, ok := r.users[e.PaidByID]; ok {
+					e.PaidByName = name
+				}
+			}
+			result = append(result, e)
+		}
+	}
+	return result, nil
+}
+
 func (r *mockRepo) GetExpense(_ context.Context, id int64) (*domain.Expense, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

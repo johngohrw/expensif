@@ -283,6 +283,10 @@ func (s *expenseRepoStub) ListExpenses(ctx context.Context, limit int) ([]domain
 	return nil, nil
 }
 
+func (s *expenseRepoStub) ListExpensesInRange(ctx context.Context, start, end string) ([]domain.Expense, error) {
+	return nil, nil
+}
+
 func (s *expenseRepoStub) GetExpense(ctx context.Context, id int64) (*domain.Expense, error) {
 	return nil, nil
 }

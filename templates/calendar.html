@@ -56,17 +56,65 @@
           {{range .Cells}} {{if eq .Day 0}}
           <div class="h-[120px] bg-gray-100"></div>
           {{else if .IsToday}}
-          <div data-today class="h-[120px] border border-gray-100 p-2">
+          <a
+            href="/?date={{.Date}}&amp;from=calendar"
+            data-today
+            data-date="{{.Date}}"
+            class="relative h-[120px] border border-gray-100 p-2 flex flex-col transition hover:brightness-95 overflow-hidden"
+          >
+            {{if .HeatLevel}}
             <div
-              class="inline-flex items-center justify-center -m-1 w-6 h-6 rounded-full bg-red-500"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+              style="width: {{.HeatDiameter}}px; height: {{.HeatDiameter}}px; background-color: {{.HeatColor}}; filter: blur(10px); opacity: 0.85;"
+            ></div>
+            {{end}}
+            <div
+              class="relative inline-flex items-center justify-center -m-1 w-6 h-6 rounded-full bg-red-500"
             >
               <span class="text-xs font-bold text-white">{{.Day}}</span>
             </div>
-          </div>
+            {{if .Count}}
+            <div class="relative mt-auto min-w-0 flex flex-col items-start gap-0.5">
+              <div
+                class="max-w-full truncate rounded bg-white/85 px-1 text-xs font-bold text-gray-900"
+              >
+                {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
+              </div>
+              <div class="rounded bg-white/85 px-1 text-[10px] text-gray-400">
+                {{.Count}} {{if eq .Count 1}}expense{{else}}expenses{{end}}
+              </div>
+            </div>
+            {{end}}
+          </a>
           {{else}}
-          <div class="h-[120px] border border-gray-100 p-2">
-            <span class="text-xs text-gray-600">{{.Day}}</span>
-          </div>
+          <a
+            href="/?date={{.Date}}&amp;from=calendar"
+            data-date="{{.Date}}"
+            class="relative h-[120px] border border-gray-100 p-2 flex flex-col transition hover:brightness-95 overflow-hidden"
+          >
+            {{if .HeatLevel}}
+            <div
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+              style="width: {{.HeatDiameter}}px; height: {{.HeatDiameter}}px; background-color: {{.HeatColor}}; filter: blur(10px); opacity: 0.85;"
+            ></div>
+            {{end}}
+            <span
+              class="relative inline-block self-start rounded bg-white/85 px-1 text-xs text-gray-600"
+              >{{.Day}}</span
+            >
+            {{if .Count}}
+            <div class="relative mt-auto min-w-0 flex flex-col items-start gap-0.5">
+              <div
+                class="max-w-full truncate rounded bg-white/85 px-1 text-xs font-bold text-gray-900"
+              >
+                {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
+              </div>
+              <div class="rounded bg-white/85 px-1 text-[10px] text-gray-400">
+                {{.Count}} {{if eq .Count 1}}expense{{else}}expenses{{end}}
+              </div>
+            </div>
+            {{end}}
+          </a>
           {{end}} {{end}}
         </div>
       </div>
@@ -78,10 +126,24 @@
 <script>
   (function () {
     var scroll = document.getElementById("calendar-scroll");
-    var today = scroll.querySelector("[data-today]");
-    if (today) {
+    var targetDate = new URLSearchParams(window.location.search).get("date");
+    var target = targetDate
+      ? scroll.querySelector('[data-date="' + targetDate + '"]')
+      : null;
+    var highlight = !!target;
+    if (!target) {
+      target = scroll.querySelector("[data-today]");
+    }
+    if (target) {
       scroll.scrollTop =
-        today.offsetTop - scroll.clientHeight / 2 + today.clientHeight / 2;
+        target.offsetTop - scroll.clientHeight / 2 + target.clientHeight / 2;
+    }
+    if (highlight) {
+      target.classList.add("ring-2", "ring-inset", "ring-blue-400");
+      setTimeout(function () {
+        target.classList.add("transition-all", "duration-700");
+        target.classList.remove("ring-2", "ring-inset", "ring-blue-400");
+      }, 1200);
     }
   })();
 </script>

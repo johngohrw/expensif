@@ -9,6 +9,7 @@ import (
 type ExpenseRepository interface {
 	CreateExpense(ctx context.Context, e domain.Expense) (int64, error)
 	ListExpenses(ctx context.Context, limit int) ([]domain.Expense, error)
+	ListExpensesInRange(ctx context.Context, start, end string) ([]domain.Expense, error)
 	GetExpense(ctx context.Context, id int64) (*domain.Expense, error)
 	UpdateExpense(ctx context.Context, e domain.Expense) error
 	DeleteExpense(ctx context.Context, id int64) error

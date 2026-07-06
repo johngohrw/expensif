@@ -4,12 +4,38 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
 	"expensif/internal/domain"
 	"expensif/internal/service"
 )
+
+// heatRampColors are the green→yellow→orange→red blob swatches for the
+// calendar spending heatmap, indexed by quintile 1-5 (index 0 is unused —
+// zero-spend days render no blob). Magnitude is double-encoded via heatDiameters
+// so it isn't color-alone.
+var heatRampColors = [6]string{"", "#4ade80", "#a3e635", "#facc15", "#fb923c", "#dc2626"}
+
+// heatDiameters are the blob diameters in px per quintile level.
+var heatDiameters = [6]int{0, 20, 34, 48, 64, 82}
+
+// heatLevel buckets total into a 1-5 quintile rank among sortedSpendTotals
+// (ascending, one entry per day that had any spend). Rank-based so outliers
+// can't stretch the scale — a single huge day just occupies the top bucket.
+func heatLevel(total float64, sortedSpendTotals []float64) int {
+	n := len(sortedSpendTotals)
+	if n == 0 {
+		return 0
+	}
+	pos := sort.SearchFloat64s(sortedSpendTotals, total)
+	bucket := pos * 5 / n
+	if bucket > 4 {
+		bucket = 4
+	}
+	return bucket + 1
+}
 
 type HTMLHandler struct {
 	svc      *service.Service
@@ -125,6 +151,40 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 	end := today.AddDate(1, 0, 0)
 	end = time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, loc)
 
+	// Aggregate converted daily totals across the full range in one pass.
+	lastDay := end.AddDate(0, 0, -1)
+	dayTotals := make(map[string]struct {
+		Total float64
+		Count int
+	})
+	expenses, err := h.svc.ExpensesInRange(ctx, start.Format("2006-01-02"), lastDay.Format("2006-01-02"))
+	if err != nil {
+		slog.Error("failed to load expenses for calendar", "error", err)
+	}
+	rates, _, rateErr := h.svc.GetRatesForConversion(ctx)
+	for _, e := range expenses {
+		amount := e.Amount
+		if rateErr == nil {
+			if conv, err := h.svc.ConvertWithRates(e.Amount, e.Currency, data.Currency, rates); err == nil {
+				amount = conv
+			}
+		}
+		entry := dayTotals[e.Date]
+		entry.Total += amount
+		entry.Count++
+		dayTotals[e.Date] = entry
+	}
+
+	// Quintile buckets computed globally over the whole range, ranked only
+	// among days that had any spend (zero-spend days stay untinted).
+	var spendTotals []float64
+	for _, dt := range dayTotals {
+		if dt.Count > 0 {
+			spendTotals = append(spendTotals, dt.Total)
+		}
+	}
+	sort.Float64s(spendTotals)
+
 	var months []domain.CalendarMonth
 	for m := start; !m.After(end); m = m.AddDate(0, 1, 0) {
 		var month domain.CalendarMonth
@@ -140,14 +200,25 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 
 		// Days
 		for d := first; !d.After(last); d = d.AddDate(0, 0, 1) {
-			isToday := d.Format("2006-01-02") == data.Today
+			dateStr := d.Format("2006-01-02")
+			isToday := dateStr == data.Today
 			if isToday {
 				month.HasToday = true
 			}
+			totals := dayTotals[dateStr]
+			level := 0
+			if totals.Count > 0 {
+				level = heatLevel(totals.Total, spendTotals)
+			}
 			month.Cells = append(month.Cells, domain.CalendarCell{
-				Day:     d.Day(),
-				Date:    d.Format("2006-01-02"),
-				IsToday: isToday,
+				Day:          d.Day(),
+				Date:         dateStr,
+				IsToday:      isToday,
+				Total:        totals.Total,
+				Count:        totals.Count,
+				HeatLevel:    level,
+				HeatColor:    heatRampColors[level],
+				HeatDiameter: heatDiameters[level],
 			})
 		}
 
@@ -165,12 +236,37 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	groups, err := h.svc.DailyGroups(ctx, 100)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	data := h.basePageData(ctx, "daily")
+
+	filterDate := r.URL.Query().Get("date")
+	var groups []domain.DailyGroup
+	var err error
+	if filterDate != "" {
+		data.FilterDate = filterDate
+		if r.URL.Query().Get("from") == "calendar" {
+			data.BackHref = "/calendar?date=" + filterDate
+			data.BackLabel = "Back to calendar"
+		} else {
+			data.BackHref = "/"
+			data.BackLabel = "Back to daily view"
+		}
+		expenses, rangeErr := h.svc.ExpensesInRange(ctx, filterDate, filterDate)
+		if rangeErr != nil {
+			http.Error(w, rangeErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		var dayTotal float64
+		for _, e := range expenses {
+			dayTotal += e.Amount
+		}
+		groups = []domain.DailyGroup{{Date: filterDate, Expenses: expenses, Total: dayTotal}}
+	} else {
+		groups, err = h.svc.DailyGroups(ctx, 100)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 
 	// Convert daily totals and per-row amounts
 	rates, _, rateErr := h.svc.GetRatesForConversion(ctx)
