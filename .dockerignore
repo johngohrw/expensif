@@ -2,13 +2,12 @@
 .git
 .gitignore
 
-# Context & docs
-.context
+# Planning memory & docs
+.plan
 *.md
 
-# Skills
-.skills
-.skills.zip
+# Agent skills
+.pocock-skills
 
 # Node
 ui/node_modules
