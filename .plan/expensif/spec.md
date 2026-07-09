@@ -23,7 +23,7 @@ The architecture follows a **Go + React Islands** pattern: server-rendered HTML 
 | Containerization | Docker | Multi-stage | Node → Go → Alpine runtime |
 | CI/CD | GitHub Actions | — | Builds linux/amd64, pushes to GHCR |
 | Hot reload | Air | — | Go auto-rebuild on save |
-| Testing (Go) | `testing` + stdlib | — | 28 tests, table-driven |
+| Testing (Go) | `testing` + stdlib | — | 40 tests, table-driven |
 | Testing (UI) | Vitest + RTL | 4.1.5 / 16.3.2 | 7 tests, jsdom environment |
 
 ---
@@ -356,9 +356,9 @@ Dates are stored as bare `YYYY-MM-DD` strings in SQLite. The user's timezone pre
 
 1. **Currency conversion in HTML handlers** (`HandleList`, `HandleDaily`) duplicates conversion logic. Should be moved to `service.DailyGroups()` / `service.ListExpenses()` with a target currency parameter. (Identified Apr 29, still open)
 
-2. **`rate.Client` is hardcoded, not injectable** — `service.New()` calls `rate.NewClient()` directly. Making it an interface would unlock testing `RefreshRates`. (Identified Apr 29, still open)
+2. **~~`rate.Client` is hardcoded, not injectable~~** — Fixed. `service.RateFetcher` is a consumer-owned interface; `*rate.Client` structurally satisfies it. `service.New()` now accepts the rate client as a parameter. (Identified Apr 29, resolved Jun 2026)
 
-3. **0 HTML handler tests** — All 28 Go tests are for API handlers. The primary user-facing surface (HTML rendering, form submission, redirects) has zero test coverage. (Identified Apr 29, still open)
+3. **0 HTML handler tests** — At the time this was written all Go tests were API handlers; service-layer tests have since been added, but the primary user-facing surface (HTML rendering, form submission, redirects) still has zero coverage. (Identified Apr 29, still open)
 
 4. **`SummaryByCategory` sums mixed currencies** — The API returns raw amounts without conversion. Categories with multi-currency expenses produce meaningless totals. (Identified Apr 29, still open)
 
@@ -368,7 +368,7 @@ Dates are stored as bare `YYYY-MM-DD` strings in SQLite. The user's timezone pre
 
 7. **`humanDate` / `currencySymbol` duplicated** — Exist in both Go (`renderer.go`) and JS (`renderers.tsx`). They need to stay in sync manually. (Identified Apr 30, still open)
 
-8. **Console.log in DataTable.tsx** — Debug logging should be removed before production. (Identified Apr 30, still open)
+8. **~~Console.log in DataTable.tsx~~** — Stale debug logging removed. (Identified Apr 30, resolved Jun 2026)
 
 9. **Action registry is empty** — `onClick` actions in DataTable column config won't execute without registry entries. Not a bug (feature not yet needed). (Identified Apr 30)
 
@@ -423,7 +423,7 @@ make docker-down  # docker compose down
 ### Testing
 
 ```bash
-go test ./...          # 28 tests, all pass
+go test ./...          # 40 tests, all pass
 go vet ./...           # clean
 cd ui && npm run build # TypeScript + Vite build
 cd ui && npx vitest run # 7/7 frontend tests pass
@@ -433,12 +433,13 @@ cd ui && npx vitest run # 7/7 frontend tests pass
 
 ## 11. Tests
 
-### Go Tests (28 total)
+### Go Tests (40 total)
 
 | File | Tests | Coverage |
 |------|-------|----------|
 | `handlers_api_test.go` | 20 | API CRUD, validation, categories, summary, `isValidationErr` |
 | `server_test.go` | 2 | Server startup, shutdown, graceful handling |
+| `service_test.go` | 12 | Rate refresh, conversion math, validation |
 | `mock_repo_test.go` | N/A | Mock implementation (used by above) |
 
 **Notable tests:**
@@ -488,4 +489,4 @@ cd ui && npx vitest run # 7/7 frontend tests pass
 
 ---
 
-*Generated from codebase exploration on 2026-06-02. See `.context/` for session history and decision logs.*
+*Generated from codebase exploration on 2026-06-02. See `.plan/handoffs/` for session history and decision logs.*

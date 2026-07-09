@@ -2,11 +2,9 @@
 
 ## 1. Overview
 
-This document defines the target architecture for migrating an existing Go web application from plain HTML templates to a **React Islands** (partial hydration) architecture.
+This document defines the architecture for building a Go web application with **React Islands** (partial hydration).
 
-**Core principle:** Go remains the server, routing, and auth layer. React components hydrate only where interactivity is needed. No SPA behavior, no React Router.
-
----
+**Core principle:** Go remains the server, router, and auth layer. React components hydrate only where interactivity is needed. There is no SPA behavior and no React Router.
 
 ## 2. Directory Structure
 
@@ -16,10 +14,10 @@ project-root/
 │   └── server/
 │       └── main.go              # Application entry point
 ├── internal/
-│   ├── handlers/                # HTTP handlers (existing, modified)
+│   ├── handlers/                # HTTP handlers
 │   ├── assets/                  # Asset loading & manifest parsing
 │   └── config/                  # App configuration
-├── templates/                   # Go html/template files (existing, modified)
+├── templates/                   # Go html/template files
 │   ├── layout.html
 │   ├── partials/
 │   └── pages/
@@ -32,6 +30,7 @@ project-root/
 │   ├── src/
 │   │   ├── components/          # Reusable React components
 │   │   ├── entries/             # Hydration entry points (one per island)
+│   │   ├── lib/                 # Shared hydration helpers
 │   │   ├── hooks/               # Custom React hooks
 │   │   └── types/               # Shared TypeScript types
 │   ├── package.json
@@ -49,8 +48,6 @@ project-root/
 - No React code outside `ui/src/`.
 - No Node modules outside `ui/`.
 
----
-
 ## 3. Technology Stack & Versions
 
 | Layer | Technology | Version |
@@ -61,13 +58,12 @@ project-root/
 | Language | TypeScript | 5.x |
 | React renderer | react-dom/client | 18.x |
 | Go templates | html/template | stdlib |
+| Styling | Tailwind CSS | via CDN (or CSS Modules) |
 
 **Rules:**
 - React 18+ required for `hydrateRoot` API.
 - TypeScript strict mode enabled.
 - No additional frontend frameworks (no Next.js, no Remix, no Astro).
-
----
 
 ## 4. UI Package Setup
 
@@ -123,11 +119,13 @@ export default defineConfig({
     manifest: true,              // Generates manifest.json for Go consumption
     rollupOptions: {
       input: {
-        // Register every island entry point here
-        // Format: <island-name>: <entry-file-path>
-        // Example:
-        // comments: resolve(__dirname, 'src/entries/comments.tsx'),
-        // cart: resolve(__dirname, 'src/entries/cart.tsx'),
+        // Register every island entry point here.
+        // Keys can be camelCase; the matching helper also looks at the
+        // manifest's `name` and `src` fields.
+        categoryPills: resolve(__dirname, 'src/entries/category-pills.tsx'),
+        descriptionPills: resolve(__dirname, 'src/entries/description-pills.tsx'),
+        dataTable: resolve(__dirname, 'src/entries/data-table.tsx'),
+        mobileNav: resolve(__dirname, 'src/entries/mobile-nav.tsx'),
       },
       output: {
         entryFileNames: 'js/[name].js',
@@ -141,11 +139,21 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 8081,                  // Must match the VITE_DEV_HOST the Go server expects
     strictPort: true,
+    host: true,
     proxy: {
       '/api': 'http://localhost:8080',
-      '^/(?!static/).*': 'http://localhost:8080',
+      '^/.*': {
+        target: 'http://localhost:8080',
+        bypass(req) {
+          // Let Vite serve its own internals and source files
+          const url = req.url || '';
+          if (url.startsWith('/@') || url.startsWith('/src/') || url.startsWith('/node_modules/')) {
+            return url;
+          }
+        },
+      },
     },
   },
 });
@@ -155,7 +163,8 @@ export default defineConfig({
 - Every island MUST be registered in `rollupOptions.input`.
 - `manifest: true` is mandatory for production asset resolution.
 - `emptyOutDir: true` prevents stale file accumulation.
-- Dev server proxies non-static requests to Go on `:8080`.
+- Dev server proxies non-static requests to Go on `:8080` while letting Vite internals (`/@`, `/src/`, `/node_modules/`) serve themselves.
+- The chosen dev port (`8081`) must be consistent with what the Go template helper expects.
 
 ### 4.4 Package Scripts (`ui/package.json`)
 
@@ -168,8 +177,6 @@ export default defineConfig({
   }
 }
 ```
-
----
 
 ## 5. React Island Pattern
 
@@ -195,40 +202,58 @@ export function Comments({ postId, initialComments }: CommentsProps) {
 - No functions, Date objects, or complex types in props — pass ISO strings and reconstruct if needed.
 - Components MUST be pure functions where possible.
 
-### 5.2 Entry Point (Hydration Target)
+### 5.2 Shared Hydration Helper (`ui/src/lib/hydrate.tsx`)
+
+Most islands use a shared helper instead of repeating `hydrateRoot` boilerplate:
+
+```typescript
+import { type ComponentType } from 'react';
+import { hydrateRoot } from 'react-dom/client';
+
+export function hydrateIsland(name: string, Component: ComponentType<any>) {
+  const container = document.querySelector(`[data-island="${name}"]`) as HTMLElement | null;
+  if (!container) {
+    console.error(`[island:${name}] Container [data-island="${name}"] not found`);
+    throw new Error(`${name} island not found`);
+  }
+
+  try {
+    const props = JSON.parse(container.dataset.props || '{}');
+    hydrateRoot(container, <Component {...props} />);
+  } catch (err) {
+    console.error(`[island:${name}] Hydration failed:`, err);
+  }
+}
+```
+
+### 5.3 Entry Point (Hydration Target)
 
 Every island needs an entry file in `ui/src/entries/`:
 
 ```typescript
 // ui/src/entries/comments.tsx
-import { hydrateRoot } from 'react-dom/client';
+import { hydrateIsland } from '../lib/hydrate';
 import { Comments } from '../components/Comments';
 
-const container = document.getElementById('comments-root');
-if (!container) {
-  throw new Error('comments-root element not found');
-}
-
-const props = JSON.parse(container.dataset.props || '{}');
-hydrateRoot(container, <Comments {...props} />);
+hydrateIsland('comments', Comments);
 ```
 
 **Rules:**
 - Entry files MUST match the name given in `vite.config.ts` `rollupOptions.input`.
-- Entry files MUST validate container existence — fail loudly if missing.
+- Entry files SHOULD use the shared helper to reduce duplication and enforce consistent container selection.
 - Entry files MUST parse props from `dataset.props` only.
 - No data fetching in entry files — initial data comes from Go.
 
-### 5.3 Naming Convention
+### 5.4 Naming Convention
 
 | Item | Pattern | Example |
 |------|---------|---------|
 | Component file | PascalCase.tsx | `Comments.tsx` |
 | Entry file | kebab-case.tsx | `comments.tsx` |
-| Island ID in HTML | kebab-case-root | `comments-root` |
-| Vite input key | kebab-case | `comments` |
+| Island container attribute | `data-island="kebab-case"` | `<div data-island="comments">` |
+| Vite input key | camelCase | `comments: resolve(...)` |
 
----
+Some islands may use a different container scheme for historical or special reasons (e.g., the DataTable island uses `data-table-root`). In that case, the entry file handles hydration itself rather than using `hydrateIsland`.
 
 ## 6. Go Template Integration
 
@@ -245,11 +270,20 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 )
+
+func devHost() string {
+	if h := os.Getenv("VITE_DEV_HOST"); h != "" {
+		return h
+	}
+	return "localhost:8081"
+}
 
 type ManifestEntry struct {
 	File string `json:"file"`
 	Src  string `json:"src"`
+	Name string `json:"name"`
 }
 
 type Manifest map[string]ManifestEntry
@@ -271,36 +305,51 @@ type AssetHelper struct {
 	Manifest Manifest
 }
 
+// ScriptTag returns a <script> tag for the given island entry point.
+// In dev mode it points to the Vite dev server. In production it matches
+// the manifest entry by name or by src substring, then emits the hashed file.
 func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 	if a.Dev {
 		return template.HTML(fmt.Sprintf(
-			`<script type="module" src="http://localhost:5173/src/entries/%s.tsx"></script>`,
-			entry,
+			`<script type="module" src="http://%s/src/entries/%s.tsx"></script>`,
+			devHost(), entry,
 		))
 	}
-	entryData, ok := a.Manifest[entry]
-	if !ok {
-		// Fail loudly in production — missing manifest entry is a build bug
-		panic(fmt.Sprintf("manifest entry not found: %s", entry))
+	for _, entryData := range a.Manifest {
+		if entryData.Name == entry || strings.Contains(entryData.Src, entry) {
+			return template.HTML(fmt.Sprintf(
+				`<script type="module" src="/static/%s"></script>`,
+				entryData.File,
+			))
+		}
 	}
-	return template.HTML(fmt.Sprintf(
-		`<script type="module" src="/static/%s"></script>`,
-		entryData.File,
-	))
+	// Missing manifest entry is a build bug, but don't crash the server.
+	return template.HTML(fmt.Sprintf("<!-- missing manifest entry: %s -->", entry))
 }
 
+// DevClient returns the React Refresh preamble and Vite HMR client in development.
+// Returns an empty string in production.
 func (a *AssetHelper) DevClient() template.HTML {
 	if !a.Dev {
 		return ""
 	}
-	return template.HTML(`<script type="module" src="http://localhost:5173/@vite/client"></script>`)
+	host := devHost()
+	return template.HTML(fmt.Sprintf(`<script type="module" src="http://%s/@react-refresh"></script>
+<script type="module">
+  import RefreshRuntime from "http://%s/@react-refresh"
+  RefreshRuntime.injectIntoGlobalHook(window)
+  window.$RefreshReg$ = () => {}
+  window.$RefreshSig$ = () => (type) => type
+  window.__vite_plugin_react_preamble_installed__ = true
+</script>
+<script type="module" src="http://%s/@vite/client"></script>`, host, host, host))
 }
 ```
 
 **Rules:**
 - `AssetHelper` is instantiated once at server startup.
-- In production, missing manifest entries MUST panic — this is a deployment bug, not a runtime error.
-- `DevClient()` injects Vite HMR client only in development.
+- In production, missing manifest entries should not panic; emit a visible HTML comment so the deployment bug is discoverable without taking the server down.
+- `DevClient()` injects the React Refresh preamble and Vite HMR client only in development.
 
 ### 6.2 Template Setup in Go
 
@@ -319,7 +368,7 @@ func setupTemplates(dev bool) (*template.Template, error) {
 	helper := &assets.AssetHelper{Dev: dev, Manifest: manifest}
 
 	return template.New("").Funcs(template.FuncMap{
-		"script": helper.ScriptTag,
+		"script":    helper.ScriptTag,
 		"devClient": helper.DevClient,
 	}).ParseGlob("templates/**/*.html")
 }
@@ -339,9 +388,7 @@ func setupTemplates(dev bool) (*template.Template, error) {
     {{template "content" .}}
 
     <!-- Island scripts injected at bottom -->
-    {{range .Islands}}
-        {{script .}}
-    {{end}}
+    {{range .Islands}}{{script .}}{{end}}
 </body>
 </html>
 ```
@@ -349,18 +396,16 @@ func setupTemplates(dev bool) (*template.Template, error) {
 ```html
 <!-- templates/pages/post.html -->
 {{define "content"}}
-<div id="comments-root" data-props='{{json .CommentsData}}'></div>
+<div data-island="comments" data-props='{{json .CommentsData}}'></div>
 {{end}}
 ```
 
 **Rules:**
 - `{{devClient}}` MUST appear in `<head>` before any module scripts.
-- Island containers MUST use `id="<island-name>-root"`.
-- Props MUST be injected via `data-props` attribute as JSON string.
-- Go's `html/template` auto-escapes — use `template.JS` or ensure JSON is properly escaped if bypassing standard methods.
-- Scripts SHOULD be placed before `</body>` for performance, or use `defer`/`type="module"` (modules defer by default).
-
----
+- Island containers MUST use the `data-island` attribute (or the island-specific equivalent).
+- Props MUST be injected via `data-props` attribute as a JSON string.
+- Go's `html/template` auto-escapes attributes; use a JSON-safe helper for `data-props` and avoid manually constructing JSON strings in templates.
+- Scripts SHOULD be placed before `</body>` for performance. Module scripts are deferred by default.
 
 ## 7. Go Handler Modifications
 
@@ -372,7 +417,6 @@ package handlers
 
 type PageData struct {
 	Title       string
-	Dev         bool
 	Islands     []string        // List of island names to render on this page
 	CommentsData json.RawMessage // Pre-serialized data for comments island
 	// ... other page-specific data
@@ -394,7 +438,6 @@ func (h *Handler) PostPage(w http.ResponseWriter, r *http.Request) {
 
 	data := PageData{
 		Title:        "Post Title",
-		Dev:          h.dev,
 		Islands:      []string{"comments"},
 		CommentsData: commentsJSON,
 	}
@@ -406,8 +449,6 @@ func (h *Handler) PostPage(w http.ResponseWriter, r *http.Request) {
 **Rules:**
 - Every handler that renders islands MUST populate the `Islands` slice.
 - JSON data for props MUST be marshaled in Go, not constructed as strings.
-
----
 
 ## 8. Development Workflow
 
@@ -424,10 +465,10 @@ DEV=true go run ./cmd/server
 ```bash
 cd ui
 npm run dev
-# Runs on http://localhost:5173
+# Runs on http://localhost:8081
 ```
 
-**Access:** Open `http://localhost:5173` — Vite proxies to Go for full-page requests.
+**Access:** Open `http://localhost:8080`. Vite proxies non-static requests to Go for full-page requests, while Vite serves its own internals and source files directly.
 
 ### 8.2 Production Build
 
@@ -440,8 +481,8 @@ go build ./cmd/server
 ```
 
 **Rules:**
-- Always run `npm run build` before deploying Go binary.
-- `static/` MUST be included in deployment artifact (or built during CI).
+- Always run `npm run build` before deploying the Go binary.
+- `static/` MUST be included in the deployment artifact (or built during CI).
 
 ### 8.3 Makefile (Recommended)
 
@@ -469,8 +510,6 @@ run: prod
 	./bin/server
 ```
 
----
-
 ## 9. Migration Rules for Existing Templates
 
 ### 9.1 Incremental Migration Strategy
@@ -492,45 +531,15 @@ For each page getting an island:
 - [ ] Create React component in `ui/src/components/`
 - [ ] Create entry file in `ui/src/entries/`
 - [ ] Register entry in `vite.config.ts` `rollupOptions.input`
-- [ ] Add `<div id="<island>-root" data-props='{{json .Data}}'>` to template
+- [ ] Add `<div data-island="..." data-props='{{json .Data}}'>` to template
 - [ ] Add island name to `PageData.Islands` in handler
 - [ ] Verify Go handler serializes props correctly
 - [ ] Test in dev (`npm run dev` + `DEV=true go run`)
 - [ ] Test production build (`npm run build` + `go build`)
 
----
-
 ## 10. CSS & Styling
 
-### 10.1 Options
-
-| Method | Use Case |
-|--------|----------|
-| **CSS Modules** | Scoped component styles (recommended) |
-| **Tailwind CSS** | Utility-first, consistent with Go templates |
-| **Plain CSS** | Simple projects, existing stylesheet migration |
-
-### 10.2 CSS Modules Setup
-
-Vite supports CSS Modules out of the box. Name files `[name].module.css`:
-
-```css
-/* ui/src/components/Comments.module.css */
-.comments { border: 1px solid #ccc; }
-```
-
-```typescript
-import styles from './Comments.module.css';
-export function Comments() {
-  return <div className={styles.comments}>...</div>;
-}
-```
-
-**Rules:**
-- CSS Modules are scoped automatically — no naming collisions.
-- Global styles (if needed) go in `ui/src/styles/global.css` and imported in entry files.
-
----
+Expensif uses **Tailwind CSS** via CDN for the server-rendered templates. React components also use Tailwind utility classes, so server markup and hydrated islands share the same design system. For component-scoped styles, CSS Modules are also supported by Vite.
 
 ## 11. Shared State Between Islands
 
@@ -563,34 +572,21 @@ export function onIslandEvent(name: string, handler: (detail: unknown) => void) 
 - Islands should be self-contained. Shared state is a code smell — reconsider if you need it.
 - If shared state is unavoidable, document the event contract explicitly.
 
----
-
 ## 12. Error Handling & Logging
 
 ### 12.1 Entry File Errors
 
+With the shared helper, entry files are thin:
+
 ```typescript
 // ui/src/entries/comments.tsx
-const container = document.getElementById('comments-root');
-if (!container) {
-  console.error('[island:comments] Container #comments-root not found');
-  // Optionally report to error tracking service
-  throw new Error('Island container missing');
-}
+import { hydrateIsland } from '../lib/hydrate';
+import { Comments } from '../components/Comments';
 
-try {
-  const props = JSON.parse(container.dataset.props || '{}');
-  hydrateRoot(container, <Comments {...props} />);
-} catch (err) {
-  console.error('[island:comments] Hydration failed:', err);
-  // Fallback: leave server-rendered HTML in place
-}
+hydrateIsland('comments', Comments);
 ```
 
-**Rules:**
-- Entry files MUST catch and log hydration errors.
-- Failed hydration SHOULD NOT crash the page — server-rendered HTML remains visible.
-- Use namespaced console logs: `[island:<name>] <message>`.
+`hydrateIsland` already catches and logs hydration errors without crashing the page. The server-rendered HTML remains visible if hydration fails.
 
 ### 12.2 Go Handler Errors
 
@@ -603,15 +599,13 @@ if err != nil {
 }
 ```
 
----
-
 ## 13. Testing Strategy
 
 ### 13.1 Go Tests
 
 - Existing handler tests continue working.
 - Add tests for `AssetHelper` manifest loading.
-- Add integration tests verifying template renders with/without `Dev` flag.
+- Add integration tests verifying template renders with/without the `Dev` flag.
 
 ### 13.2 React Tests
 
@@ -624,8 +618,6 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
 - Test components in isolation, not entry files.
 - Entry files are thin hydration glue — integration tests cover them.
 
----
-
 ## 14. Deployment Checklist
 
 - [ ] `npm run build` succeeds without errors
@@ -635,8 +627,6 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
 - [ ] `manifest.json` is readable by Go at runtime (path correct)
 - [ ] No `DEV=true` in production environment
 - [ ] Static files served with proper cache headers (production JS has hashes)
-
----
 
 ## 15. Anti-Patterns (DO NOT)
 
@@ -650,16 +640,14 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
 | Mixing Go and React state management | Complexity, bugs | Go owns server state, React owns UI state |
 | Building UI into Go binary | Couples build steps, bloat | Keep `ui/` separate, `static/` is artifact |
 
----
-
 ## 16. Quick Reference
 
 ### Adding a New Island
 
 1. `ui/src/components/MyFeature.tsx` — component
-2. `ui/src/entries/my-feature.tsx` — entry file
-3. `ui/vite.config.ts` — add `my-feature: resolve(...)` to `rollupOptions.input`
-4. Template — add `<div id="my-feature-root" data-props='{{json .MyData}}'>`
+2. `ui/src/entries/my-feature.tsx` — entry file calling `hydrateIsland('my-feature', MyFeature)`
+3. `ui/vite.config.ts` — add `myFeature: resolve(...)` to `rollupOptions.input`
+4. Template — add `<div data-island="my-feature" data-props='{{json .MyData}}'>`
 5. Handler — add `"my-feature"` to `PageData.Islands`, populate `.MyData`
 6. Test in dev, build for prod
 
@@ -680,17 +668,11 @@ export function {PascalCase}(props: {PascalCase}Props) {
 **New entry:**
 ```typescript
 // ui/src/entries/{kebab-case}.tsx
-import { hydrateRoot } from 'react-dom/client';
+import { hydrateIsland } from '../lib/hydrate';
 import { {PascalCase} } from '../components/{PascalCase}';
 
-const container = document.getElementById('{kebab-case}-root');
-if (!container) throw new Error('{kebab-case}-root not found');
-
-const props = JSON.parse(container.dataset.props || '{}');
-hydrateRoot(container, <{PascalCase} {...props} />);
+hydrateIsland('{kebab-case}', {PascalCase});
 ```
-
----
 
 ## 17. Appendix: Complete Minimal Example
 
@@ -718,11 +700,20 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 8081,
     strictPort: true,
+    host: true,
     proxy: {
       '/api': 'http://localhost:8080',
-      '^/(?!static/).*': 'http://localhost:8080',
+      '^/.*': {
+        target: 'http://localhost:8080',
+        bypass(req) {
+          const url = req.url || '';
+          if (url.startsWith('/@') || url.startsWith('/src/') || url.startsWith('/node_modules/')) {
+            return url;
+          }
+        },
+      },
     },
   },
 });
@@ -748,21 +739,17 @@ export function Counter({ initialCount }: CounterProps) {
 
 ### `ui/src/entries/counter.tsx`
 ```typescript
-import { hydrateRoot } from 'react-dom/client';
+import { hydrateIsland } from '../lib/hydrate';
 import { Counter } from '../components/Counter';
 
-const container = document.getElementById('counter-root');
-if (!container) throw new Error('counter-root not found');
-
-const props = JSON.parse(container.dataset.props || '{"initialCount":0}');
-hydrateRoot(container, <Counter {...props} />);
+hydrateIsland('counter', Counter);
 ```
 
 ### `templates/pages/demo.html`
 ```html
 {{define "content"}}
 <h1>Counter Demo</h1>
-<div id="counter-root" data-props='{{json .CounterData}}'></div>
+<div data-island="counter" data-props='{{json .CounterData}}'></div>
 {{end}}
 ```
 
@@ -771,7 +758,6 @@ hydrateRoot(container, <Counter {...props} />);
 counterJSON, _ := json.Marshal(map[string]int{"initialCount": 5})
 data := PageData{
     Title:        "Counter Demo",
-    Dev:          dev,
     Islands:      []string{"counter"},
     CounterData:  counterJSON,
 }
