@@ -1,7 +1,7 @@
 # Window size and how older days load
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: none
 
 ## Question
