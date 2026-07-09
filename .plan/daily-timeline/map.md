@@ -29,8 +29,16 @@ Skills every session should consult: `codebase-design` before changing the servi
 boundary; `domain-modeling` whenever a term firms up (`CONTEXT.md` does not exist
 yet — create it lazily).
 
-Standing preference: server-render unless a decision *forces* an island. Collapsing
-was ruled out precisely to keep this page static.
+Standing preference: server-render unless a decision *forces* an island. ~~Collapsing
+was ruled out precisely to keep this page static.~~ **Superseded** — the user chose an
+infinite-scroll island in [Window size and how older days load](./tickets/02-window-size-and-pagination.md).
+This page will have a fetching island regardless. Keep the preference as a tiebreaker,
+not as a rule.
+
+Note for every session: `templates/partials/data-table.html` emits **no table markup**
+— only a root div and JSON props. Every table on this page is already client-rendered
+React, and the page already requires JS to show any expense. Do not reason as if the
+daily view degrades gracefully today; it does not.
 
 Bounds are settled up front and constrain every ticket: **anchor at today, walk
 backwards a fixed window, paginate older windows on demand. No future days.**
@@ -39,7 +47,10 @@ backwards a fixed window, paginate older windows on demand. No future days.**
 
 <!-- one line per resolved ticket: gist + link -->
 
-_None yet._
+- [Window size and how older days load](./tickets/02-window-size-and-pagination.md) —
+  rolling 30 days from today; older windows appended by a new infinite-scroll React
+  island fetching JSON; first window stays server-rendered; scroll stops at the
+  earliest expense. No new SQL needed — `ListExpensesInRange` already fits.
 
 ## Not yet specified
 
@@ -53,9 +64,6 @@ _None yet._
 - **Test strategy.** `internal/web/handlers_api_test.go` exists; a date-indexed
   timeline wants tests for gap-filling, window edges, and the DST/timezone boundary.
   Can't be specified until the query shape lands.
-- **Query cost.** Whether one `ExpensesInRange` per window is enough, or whether the
-  view wants a `GROUP BY date` aggregate the way the calendar's `dayTotals` does.
-  Hangs on the window size.
 - **Timezone day boundaries.** `nowInTZ(prefs.Timezone)` defines "today", but
   `Expense.Date` is a bare `2006-01-02` string. Whether a window edge can straddle a
   DST transition, and whether that matters, isn't sharp yet.
@@ -63,6 +71,8 @@ _None yet._
 ## Out of scope
 
 - **Collapsing long runs of empty days** into an expandable "no expenses, Mar 3–17"
-  row. Ruled out by the user while scoping. It is the one decision that would force
-  this page to become a React island; leaving it out keeps the timeline
-  server-rendered. Returns only as a fresh effort.
+  row. Ruled out by the user while scoping. **Its original rationale no longer holds**
+  — it was ruled out for forcing an island, and ticket 02 has since added one anyway.
+  It stays out of scope because the user ruled it out, not because of the cost. Out of
+  scope work does not graduate: if you want it, redraw the destination and start a
+  fresh effort.

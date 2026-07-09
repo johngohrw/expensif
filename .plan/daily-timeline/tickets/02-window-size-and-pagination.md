@@ -1,7 +1,7 @@
 # Window size and how older days load
 
 Type: grilling
-Status: claimed
+Status: resolved
 Blocked by: none
 
 ## Question
@@ -30,3 +30,47 @@ Resolve, one at a time:
 
 This ticket blocks the query shape, so it also owes an answer to: what does the
 handler need to ask the repository for — a window of expenses, or a window of days?
+
+## Answer
+
+**Window is a rolling 30 days from today**: `[today-29, today]`. Always 30 cards, today
+always first, no ragged first window. Month-alignment was rejected because on the 1st
+of a month the first window would be one day tall.
+
+**Older days arrive via a new infinite-scroll React island.** This overrides the map's
+standing "server-render unless forced" preference — recorded as a deliberate choice by
+the user, not an oversight. Plain-link options (`?days=` growing window, `?before=`
+pages) were offered and declined.
+
+**The island fetches JSON and renders appended day-cards in React.** A new endpoint
+returns `[]domain.DailyGroup` for a date range. Rejected: fetching HTML fragments,
+because `ui/src/entries/data-table.tsx` calls `init()` once at module load and
+`querySelectorAll`s the document — appended `[data-table-root]` nodes would never
+mount, and its `hydrateRoot` is the wrong call for freshly-fetched markup anyway.
+
+**The first 30-day window stays server-rendered** by `daily.html`; the island only
+appends windows below it. This keeps first paint fast and keeps muted empty-day cards
+working without JS. The price is that day-card chrome (header, date, footer total)
+is implemented twice — Go template and TSX. Accepted, and contained by ticket 06.
+
+**Scrolling terminates at the earliest expense's day.** `svc.GetEarliestExpenseDate()`
+already exists and is already used by `HandleCalendar`. Once a window reaches it, the
+island stops requesting and the foot shows a terminal marker. No infinite scroll into
+pre-history.
+
+### Facts established (looked up, not asked)
+
+- **`DailyGroups` has exactly one caller** — `handlers_html.go:264`, where `100` is a
+  bare literal. Nothing defends the current signature. Ticket 04 may change it freely.
+- **The repository needs no new SQL.** `ListExpensesInRange(ctx, start, end)`
+  (`sqlite.go:69`) takes a date range with no `LIMIT`, and `HandleCalendar` already
+  uses it for exactly this purpose. This also settles the map's "Query cost" fog: one
+  `ExpensesInRange` per 30-day window is enough; no `GROUP BY date` aggregate needed.
+- **The daily view's tables are already client-rendered React, not hydrated server
+  markup.** `templates/partials/data-table.html` emits only `<div data-table-root>`
+  with a JSON `<script>` and a `<noscript>` fallback — there is no server-rendered
+  `<table>`. So this page already requires JS to display any expense, and the
+  Go-template/TSX drift introduced above touches only day-card chrome, never tables.
+- The app has **no pagination anywhere** today; this is the first.
+- Gap-filling adds only static cards — empty days carry no `data-table` island — so
+  window size drives markup weight, not hydration cost.
