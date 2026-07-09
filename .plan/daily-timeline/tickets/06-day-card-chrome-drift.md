@@ -33,3 +33,28 @@ Resolve:
 - Cheaper alternative worth pricing before accepting: does the endpoint return
   **display-ready** `DailyGroup`s (formatted date, formatted total, formatted label)
   so the TSX card is a dumb renderer and all formatting stays in Go?
+
+---
+
+## Update — after ticket 08 (the ledger)
+
+The card is gone. What duplicates across Go template and TSX is now the **ledger**:
+five columns, two rails, the 28px row unit, the month-break divider, and the expense
+rows themselves — which the card never duplicated, because `DataTable` rendered them.
+The drift surface **grew**, not shrank.
+
+Two facts that reframe this ticket:
+
+- **The repo already accepts this exact trade.** `templates/partials/button.html:1-3`
+  opens with *"keep in sync with `ui/src/components/Button.tsx` — both must use
+  identical Tailwind class mappings for variant + size."* Go-template/TSX duplication
+  is a documented convention here, not a novel hazard.
+- The ledger's alignment rests on three invariants (see ticket 08's answer) that are
+  invisible in a screenshot and easy to break in a reimplementation — `self-start` on
+  the expenses column, padding on rows not columns, explicit `leading-4`. A TSX
+  reimplementation that "looks right" in isolation will drift at the seam.
+
+That strengthens the case for the cheaper option this ticket already floated: have the
+JSON endpoint return **display-ready** groups (formatted date, formatted total,
+formatted amounts) so the TSX side is a dumb renderer and all formatting logic stays
+in Go. Only the class strings duplicate then, exactly as `button.html` does it.

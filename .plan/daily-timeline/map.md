@@ -38,7 +38,10 @@ not as a rule.
 Note for every session: `templates/partials/data-table.html` emits **no table markup**
 — only a root div and JSON props. Every table on this page is already client-rendered
 React, and the page already requires JS to show any expense. Do not reason as if the
-daily view degrades gracefully today; it does not.
+daily view degrades gracefully today; it does not. **But the ledger changes this** —
+[ticket 08](./tickets/08-day-entry-ledger-redesign.md) drops `data-table` from the
+daily view, so once implemented the page renders expenses server-side and works
+without JS. Ticket 02's island decision was taken before that was true.
 
 Bounds are settled up front and constrain every ticket: **anchor at today, walk
 backwards a fixed window, paginate older windows on demand. No future days.**
@@ -51,16 +54,31 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   rolling 30 days from today; older windows appended by a new infinite-scroll React
   island fetching JSON; first window stays server-rendered; scroll stops at the
   earliest expense. No new SQL needed — `ListExpensesInRange` already fits.
+- [Muted empty-day card design](./tickets/01-muted-empty-day-design.md) — an empty day
+  is a **ledger line**, not a card: date gutter, "no expenses", and an always-visible
+  `+`. Hover-only affordances rejected (mobile); full cards rejected (22 of 30 days
+  are empty — they are the page's background, not its content).
+- [Redesign the day entry as a ledger row](./tickets/08-day-entry-ledger-redesign.md) —
+  the card is gone from the whole timeline. Five columns, two unbroken rails, a 28px
+  row unit, month-break dividers. **Drops `data-table` from this page**, so expenses
+  become server-rendered and the daily view works without JS. Delete demoted to the
+  edit page. Approved markup: [`assets/day-entry-ledger.html.approved`](./assets/day-entry-ledger.html.approved).
 
 ## Not yet specified
 
 - **The zero-expense-ever empty state.** `daily.html:55` currently swaps the whole
-  page for "No expenses yet." Once every day is a card, a brand-new account renders
-  N muted cards instead. Which wins? Hangs on the empty-day design.
-- **Today's card.** Whether today is visually distinguished from any other day, and
+  page for "No expenses yet." Once every day is a row, a brand-new account renders 30
+  muted ledger lines instead. Which wins?
+- **Today's row.** Whether today is visually distinguished from any other day, and
   whether it is distinguished *differently* when empty. `HandleCalendar` has an
-  `IsToday` flag and `CalendarCell.IsToday`; daily has no equivalent. Hangs on the
-  empty-day design.
+  `IsToday` flag and `CalendarCell.IsToday`; the ledger has no equivalent. The design
+  settled in ticket 08 makes no provision for it.
+- **Delete's new home.** Ticket 08 demoted delete to the edit page. Whether the edit
+  page's delete affordance is good enough to carry that traffic is unexamined; nobody
+  has looked at `templates/edit.html` with this in mind.
+- **`?date=` under the ledger.** The single-day filter view still renders the old
+  card. Ticket 05 asks whether the branches converge; the ledger sharpens it, since a
+  one-day ledger with two rails and an empty total column may look absurd alone.
 - **Test strategy.** `internal/web/handlers_api_test.go` exists; a date-indexed
   timeline wants tests for gap-filling, window edges, and the DST/timezone boundary.
   Can't be specified until the query shape lands.

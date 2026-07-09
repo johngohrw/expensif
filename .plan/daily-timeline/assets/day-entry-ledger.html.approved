@@ -1,0 +1,115 @@
+{{/*
+  PROTOTYPE — throwaway. Delete once ticket 08 is resolved.
+
+  Empty-day treatment SETTLED (ticket 01, variant C: the ledger line).
+  Day-entry layout SETTLED (ticket 08, variant F: the date rail). Now tweaking F.
+
+  Layout skeleton, shared by both day kinds:
+
+    [ date w-28 ][ rail ][ expenses, flex-1, self-start ][ rail ][ total w-24 ]
+
+  Rules that keep it uniform:
+    1. Rails are their OWN stretching columns, so they span the full day height even
+       when a neighbouring column is shorter. Days stack with no vertical padding
+       between them, so rails touch: two unbroken lines down the page.
+    2. Vertical padding lives on the ROW, never on the column, so the date, the first
+       expense, and the total all share a baseline.
+    3. Every row is 28px (text 16px + py-1.5 x2). The + is now its own full-width row
+       at the foot of the expenses column, so it keeps that rhythm.
+
+  View at /?variant=F   See .plan/daily-timeline/tickets/08-day-entry-ledger-redesign.md
+*/}}
+
+{{/* ---- A rail. Stretches to the full height of the day. ---- */}}
+{{- define "proto-rail" -}}<div class="w-px shrink-0 bg-gray-200"></div>{{- end -}}
+
+
+{{/* ---- The add affordance: its own row, full width of the expenses column. ---- */}}
+{{- define "proto-add-row" -}}
+<a
+  href="/expenses/new?date={{.date}}"
+  aria-label="Add expense on {{.label}}"
+  class="flex items-center justify-end px-3 py-1.5 rounded-md text-lg leading-4 text-gray-400 hover:bg-blue-50 hover:text-blue-600 active:bg-blue-100 transition-colors"
+  >+</a
+>
+{{- end -}}
+
+
+{{/* ---- Empty day ---- */}}
+{{- define "empty-day-ledger" -}}
+{{- $label := formatDate .date .tz -}}
+<div class="flex px-3 sm:px-4">
+  <div class="w-28 shrink-0 pt-2 pb-2">
+    <div class="py-1.5 text-xs tabular-nums text-gray-400 whitespace-nowrap leading-4">
+      {{protoShortDate .date .tz}}
+    </div>
+  </div>
+  {{template "proto-rail"}}
+  {{/* One 28px row: label and + merged, the whole row is the add target. */}}
+  <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+    <a
+      href="/expenses/new?date={{.date}}"
+      aria-label="Add expense on {{$label}}"
+      class="group flex items-center px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors"
+    >
+      <span class="text-xs text-gray-300 italic leading-4 group-hover:text-blue-600">no expenses</span>
+      <span class="flex-1"></span>
+      <span class="text-lg leading-4 text-gray-400 group-hover:text-blue-600">+</span>
+    </a>
+  </div>
+  {{template "proto-rail"}}
+  {{/* Reserve the total column's width so the rails never shift between day kinds. */}}
+  <div class="w-24 shrink-0 pt-2 pb-2 pl-3"></div>
+</div>
+{{- end -}}
+
+
+{{/* ---- Day with expenses ---- */}}
+{{- define "day-entry-prototype" -}}
+{{- $g := .g -}}
+{{- $sym := .sym -}}
+{{- $label := formatDate $g.Date .tz -}}
+{{- $total := $g.Total -}}
+{{- if $g.ConvertedTotal -}}{{- $total = $g.ConvertedTotal -}}{{- end -}}
+<div class="flex px-3 sm:px-4">
+  <div class="w-28 shrink-0 pt-2 pb-2">
+    <div class="py-1.5 text-xs tabular-nums font-semibold text-gray-900 whitespace-nowrap leading-4">
+      {{protoShortDate $g.Date .tz}}
+    </div>
+  </div>
+  {{template "proto-rail"}}
+  <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+    {{range $g.Expenses}}
+    <a
+      href="/expenses/edit/{{.ID}}"
+      class="flex items-center gap-3 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+    >
+      <span class="text-xs text-gray-800 truncate leading-4"
+        >{{if .Description}}{{.Description}}{{else}}<span class="text-gray-400 italic">no description</span>{{end}}</span
+      >
+      <span class="text-[10px] uppercase tracking-wide text-gray-400 whitespace-nowrap">{{.Category}}</span>
+      <span class="flex-1"></span>
+      <span class="tabular-nums text-xs text-gray-900 whitespace-nowrap leading-4"
+        >{{$sym}}{{if .ConvertedAmount}}{{printf "%.2f" .ConvertedAmount}}{{else}}{{printf "%.2f" .Amount}}{{end}}</span
+      >
+    </a>
+    {{end}}
+    {{template "proto-add-row" dict "date" $g.Date "label" $label}}
+  </div>
+  {{template "proto-rail"}}
+  <div class="w-24 shrink-0 pt-2 pb-2 pl-3">
+    <div class="py-1.5 text-right tabular-nums text-sm font-bold text-gray-900 leading-4 whitespace-nowrap">
+      {{$sym}}{{printf "%.2f" $total}}
+    </div>
+  </div>
+</div>
+{{- end -}}
+
+
+{{- define "prototype-switcher" -}}
+<div
+  class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-full bg-gray-900 text-white shadow-lg px-4 py-1.5 font-mono text-xs"
+>
+  PROTOTYPE <span class="text-gray-400">·</span> F — Date rail
+</div>
+{{- end -}}

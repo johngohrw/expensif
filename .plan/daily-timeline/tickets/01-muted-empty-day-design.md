@@ -1,7 +1,7 @@
 # Muted empty-day card design
 
 Type: prototype
-Status: claimed
+Status: resolved
 Blocked by: none
 
 ## Question
@@ -32,3 +32,40 @@ Prototype at least two treatments in the template and view them against a seeded
 of empty and non-empty days. The output is the chosen markup, linked as an asset.
 
 Constraint from the map: no islands. This must be static markup and CSS.
+
+## Answer
+
+**Variant C — the ledger line — wins.** An empty day is not a card. It is a single row:
+a fixed-width date gutter (`tabular-nums`, so dates align down the column), a muted
+"no expenses" label, and a **persistent circular `+` button** on the right.
+
+Chosen against variants A (muted card, same chrome as a real day) and B (thin row,
+whole row clickable) rendered live at `/?variant=` on a seeded 30-day window.
+
+Why C:
+
+- **The add affordance is always visible.** B's cue was hover-only; the daily view is
+  mobile-first (`mobile-pad-start`, `sm:` breakpoints throughout) and hover does not
+  exist there. C's `+` is a real tap target at all widths.
+- **A is too loud.** With a 30-day window, **22 of 30 days were empty** in the seeded
+  data — 73%. Twenty-two dashed cards drown the eight days that carry information.
+  Empty days are the background of this page, not its content.
+- The `+` is the affordance, not the row. The row is inert; only the button navigates
+  to `/expenses/new?date=`.
+
+### Consequence — the card must go
+
+C abandons the card metaphor for empty days. Leaving days-with-expenses as cards
+leaves two visual species in one list. The user therefore extended the design to the
+**day entry itself**: the whole timeline becomes a ledger, no cards.
+
+That is a new decision, tracked as
+[Redesign the day entry as a ledger row](./08-day-entry-ledger-redesign.md), and it
+may remove the `data-table` island from this page entirely.
+
+### Assets
+
+Prototype: `internal/web/handlers_html_prototype.go`,
+`templates/partials/empty-day-prototype.html` (throwaway — folded in and deleted when
+ticket 08 lands). Ran on a scratch DB, seeded with 12 expenses across 8 days,
+including a six-day empty run.
