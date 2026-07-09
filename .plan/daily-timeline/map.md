@@ -58,6 +58,12 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   is a **ledger line**, not a card: date gutter, "no expenses", and an always-visible
   `+`. Hover-only affordances rejected (mobile); full cards rejected (22 of 30 days
   are empty — they are the page's background, not its content).
+- [What happens to expenses dated after today](./tickets/03-future-dated-expenses.md) —
+  they render in an **"Upcoming" section above the timeline**, grouped by day, *not*
+  gap-filled. The window still ends at today. Probed: future dates and even
+  `"date":"banana"` are accepted with `201` — `validateExpenseInput` never checks the
+  date. Today's daily view already shows future expenses above today, so hiding them
+  would be a regression.
 - [Redesign the day entry as a ledger row](./tickets/08-day-entry-ledger-redesign.md) —
   the card is gone from the whole timeline. Five columns, two unbroken rails, a 28px
   row unit, month-break dividers. **Drops `data-table` from this page**, so expenses
@@ -84,7 +90,13 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   Can't be specified until the query shape lands.
 - **Timezone day boundaries.** `nowInTZ(prefs.Timezone)` defines "today", but
   `Expense.Date` is a bare `2006-01-02` string. Whether a window edge can straddle a
-  DST transition, and whether that matters, isn't sharp yet.
+  DST transition, and whether that matters, isn't sharp yet. Sharpened slightly by
+  ticket 03: "future" is now a comparison against today, so the timezone that defines
+  today decides which section an expense lands in.
+- **The Upcoming section's own design.** Ticket 03 fixed its content (future days,
+  grouped, ungapped) but not its chrome: heading, divider, whether it collapses when
+  long, whether its days carry `+` rows, and what it looks like when empty (the
+  common case). Ticket 08's ledger is the raw material.
 
 ## Out of scope
 
