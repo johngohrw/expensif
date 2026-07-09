@@ -1,7 +1,7 @@
 # Validate expense dates on the write path
 
-Type: grilling
-Status: open
+Type: task
+Status: resolved
 Blocked by: none
 
 ## Question
@@ -22,31 +22,20 @@ won't stop a future date either, and the API has no browser at all.
 that garbage dates get fixed at the source rather than defended against on read. This
 ticket specifies that fix.
 
-Resolve:
+## Answer
 
-- **What is a valid date?** Must it `time.Parse("2006-01-02")`? Anything else — a
-  lower bound, a sanity ceiling?
-- **Are future dates valid?** Ticket 03 says *yes* — they render in Upcoming. So
-  validation must reject unparseable dates **without** rejecting future ones. Do not
-  quietly conflate the two; a `max=` on the form input would break Upcoming.
-- **Reject or coerce?** Return a `ErrInvalidDate` sentinel alongside `ErrInvalidAmount`
-  and friends, or silently fall back to today? The existing errors reject; follow suit
-  unless there's a reason not to.
-- **Both write paths.** `CreateExpense` (`service.go:68`) and `UpdateExpense`
-  (`service.go:100`) both call `validateExpenseInput`, so one change covers both —
-  confirm that, and confirm `isValidationErr` maps the new sentinel to a `400` in
-  `handlers_api.go:61`.
-- **The form.** Does `form.html` need anything, given `<input type="date">` already
-  constrains a browser user to well-formed dates? The gap is the API, not the form.
-- **Existing rows.** Ticket 03 accepted the risk that already-written garbage rows
-  keep rendering. Is that still acceptable once you look at it directly? A migration
-  that nulls or repairs unparseable dates is the alternative. Note the local dev
-  database is empty; deployed ones may not be.
-- **Tests.** `internal/service` has tests. A table test over the date cases is cheap.
+Implemented date validation in `validateExpenseInput`.
 
-## Scope note
+- A non-empty date must parse as `2006-01-02`. Anything else returns `ErrInvalidDate`.
+- Future dates remain valid; Upcoming depends on them (ticket 03).
+- Empty dates still default to today.
+- Both `CreateExpense` and `UpdateExpense` are covered because both call `validateExpenseInput`.
+- `ErrInvalidDate` is mapped to `400 Bad Request` by `isValidationErr` in `handlers_api.go`.
+- The HTML form already uses `<input type="date">`, which constrains browsers to well-formed dates; no `max=` attribute was added because future dates are allowed.
+- Existing rows with unparseable dates are left as-is. This was accepted in ticket 03 and this ticket is scoped to the write path only.
 
-This is a write-path change and the map's destination is a daily-view spec. It is in
-scope only because the daily view's Upcoming section cannot be specified while an
-unparseable date can outrank every real one. Keep it to date validation; do not let it
-grow into a general validation audit.
+Files changed:
+- `internal/service/service.go` — added `ErrInvalidDate`, parse check in `validateExpenseInput`.
+- `internal/web/handlers_api.go` — `isValidationErr` includes `ErrInvalidDate`.
+- `internal/service/service_test.go` — added tests for invalid, valid, past, and future dates.
+- `internal/web/handlers_api_test.go` — added tests for invalid date on create and update, and updated `TestIsValidationErr`.

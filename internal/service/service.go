@@ -17,6 +17,7 @@ var (
 	ErrInvalidAmount      = errors.New("Amount must be greater than 0")
 	ErrMissingCategory    = errors.New("Category is required")
 	ErrMissingDescription = errors.New("Description is required")
+	ErrInvalidDate        = errors.New("Date must be a valid YYYY-MM-DD")
 	ErrNoRates            = errors.New("No exchange rates available")
 )
 
@@ -58,6 +59,8 @@ func validateExpenseInput(amount float64, category, description, date, currency 
 	}
 	if date == "" {
 		date = time.Now().Format("2006-01-02")
+	} else if _, err := time.Parse("2006-01-02", date); err != nil {
+		return "", "", "", "", ErrInvalidDate
 	}
 	if currency == "" {
 		currency = "USD"

@@ -69,6 +69,10 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   row unit, month-break dividers. **Drops `data-table` from this page**, so expenses
   become server-rendered and the daily view works without JS. Delete demoted to the
   edit page. Approved markup: [`assets/day-entry-ledger.html.approved`](./assets/day-entry-ledger.html.approved).
+- [Validate expense dates on the write path](./tickets/09-validate-expense-dates.md) —
+  non-empty dates must parse as `YYYY-MM-DD`; future dates remain valid; empty dates
+  still default to today. Both API and HTML form write paths reject unparseable dates
+  with `ErrInvalidDate` → `400 Bad Request`. Existing garbage rows are left untouched.
 
 ## Not yet specified
 

@@ -156,5 +156,6 @@ func (h *APIHandler) HandleSummary(w http.ResponseWriter, r *http.Request) {
 func isValidationErr(err error) bool {
 	return errors.Is(err, service.ErrInvalidAmount) ||
 		errors.Is(err, service.ErrMissingCategory) ||
-		errors.Is(err, service.ErrMissingDescription)
+		errors.Is(err, service.ErrMissingDescription) ||
+		errors.Is(err, service.ErrInvalidDate)
 }

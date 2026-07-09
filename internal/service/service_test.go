@@ -267,6 +267,48 @@ func TestCreateExpense_MissingDescription(t *testing.T) {
 	}
 }
 
+func TestCreateExpense_InvalidDate(t *testing.T) {
+	svc := New(repository.Repos{}, &mockRateClient{})
+	_, err := svc.CreateExpense(context.Background(), 10.0, "food", "lunch", "banana", "USD", 0)
+	if !errors.Is(err, ErrInvalidDate) {
+		t.Fatalf("expected ErrInvalidDate, got %v", err)
+	}
+}
+
+func TestCreateExpense_ValidAndFutureDates(t *testing.T) {
+	tests := []struct {
+		name string
+		date string
+	}{
+		{"past date", "2020-12-31"},
+		{"today default", ""},
+		{"future date", "2031-01-01"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var captured domain.Expense
+			mockExpenses := &expenseRepoStub{create: func(e domain.Expense) (int64, error) {
+				captured = e
+				return 1, nil
+			}}
+			svc := New(repository.Repos{Expenses: mockExpenses}, &mockRateClient{})
+			_, err := svc.CreateExpense(context.Background(), 10.0, "food", "lunch", tt.date, "USD", 0)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.date == "" {
+				if captured.Date == "" {
+					t.Fatal("expected default date")
+				}
+				return
+			}
+			if captured.Date != tt.date {
+				t.Fatalf("expected date %q, got %q", tt.date, captured.Date)
+			}
+		})
+	}
+}
+
 // expenseRepoStub is a minimal stub for expense repository tests.
 type expenseRepoStub struct {
 	create func(e domain.Expense) (int64, error)

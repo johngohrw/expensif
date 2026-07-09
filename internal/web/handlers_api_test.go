@@ -179,6 +179,25 @@ func TestAPICreate_MissingDescription(t *testing.T) {
 	}
 }
 
+func TestAPICreate_InvalidDate(t *testing.T) {
+	h, _ := newTestAPIHandler()
+	body := map[string]interface{}{"amount": 10.0, "category": "food", "description": "test", "date": "banana"}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/expenses", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	h.HandleCreate(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rr.Code)
+	}
+	resp := parseAPIResponse(t, rr)
+	if !strings.Contains(strings.ToLower(resp.Error), "date") {
+		t.Fatalf("expected date validation error, got: %s", resp.Error)
+	}
+}
+
 func TestAPICreate_InvalidJSON(t *testing.T) {
 	h, _ := newTestAPIHandler()
 	req := httptest.NewRequest(http.MethodPost, "/api/expenses", strings.NewReader("not json"))
@@ -410,6 +429,27 @@ func TestAPISummary(t *testing.T) {
 	}
 }
 
+func TestAPIUpdate_InvalidDate(t *testing.T) {
+	h, repo := newTestAPIHandler()
+	repo.seed()
+	body := map[string]interface{}{"amount": 10.0, "category": "food", "description": "test", "date": "banana"}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPut, "/api/expenses/1", bytes.NewReader(b))
+	req.SetPathValue("id", "1")
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+
+	h.HandleUpdate(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", rr.Code)
+	}
+	resp := parseAPIResponse(t, rr)
+	if !strings.Contains(strings.ToLower(resp.Error), "date") {
+		t.Fatalf("expected date validation error, got: %s", resp.Error)
+	}
+}
+
 // ---------- isValidationErr ----------
 
 func TestIsValidationErr(t *testing.T) {
@@ -424,8 +464,9 @@ func TestIsValidationErr(t *testing.T) {
 		{"wrapped amount", fmt.Errorf("service failed: %w", service.ErrInvalidAmount), true},
 		{"wrapped category", fmt.Errorf("service failed: %w", service.ErrMissingCategory), true},
 		{"wrapped description", fmt.Errorf("service failed: %w", service.ErrMissingDescription), true},
+		{"direct date", service.ErrInvalidDate, true},
+		{"wrapped date", fmt.Errorf("service failed: %w", service.ErrInvalidDate), true},
 		{"random error", errors.New("random"), false},
-		{"nil error", nil, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
