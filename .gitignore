@@ -50,3 +50,4 @@ tmp/
 /ui/node_modules/
 # iudex workspace state
 .iudex/
+.skills/
