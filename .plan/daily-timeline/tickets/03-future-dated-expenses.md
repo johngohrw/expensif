@@ -1,7 +1,7 @@
 # What happens to expenses dated after today
 
 Type: grilling
-Status: open
+Status: claimed
 Blocked by: none
 
 ## Question
