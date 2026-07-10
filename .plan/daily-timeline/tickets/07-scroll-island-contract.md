@@ -1,6 +1,8 @@
 ---
 type: grilling
 blocked_by: [01, 04]
+claimed_by: claude-code-session-2026-07-10
+claimed_at: 2026-07-10T11:10:31Z
 ---
 
 # The infinite-scroll island's contract
