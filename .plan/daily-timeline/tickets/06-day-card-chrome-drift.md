@@ -1,6 +1,8 @@
 ---
 type: grilling
 blocked_by: [01, 04]
+claimed_by: claude-code-session-2026-07-10
+claimed_at: 2026-07-10T12:29:45Z
 ---
 
 # Contain the day-card chrome drift
