@@ -87,6 +87,13 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   expense, and a **server-issued cursor** so the island does no date math. No `<noscript>`
   fallback — it would grow `HandleDaily` a third branch. *Undermined by 06: its JSON DTO and
   `mountIsland` are void; everything above stands.*
+- [Should HandleDaily's two branches converge](./tickets/05-converge-handledaily-branches.md) —
+  **they don't.** `?date=` is a single-day detail view for any date in ±1 year (the calendar
+  links every cell), not a one-day window of a timeline that ends at today — so it keeps its
+  own branch and `ExpensesInRange`. Convergence is of *rendering*: a populated day draws
+  through ticket 08's day-entry partial verbatim; an empty `?date=` shows the fuller "No
+  expenses for this day" state, so ticket 01's muted line has one consumer (the timeline) and
+  ticket 08's day has two. Shared currency loop stays shared.
 - [Re-shape DailyGroups around dates, not expenses](./tickets/04-date-indexed-daily-groups.md) —
   `DailyGroups(ctx, limit)` splits into `DailyGroupsInRange(ctx, start, end)` (gap-filled)
   and `UpcomingGroups(ctx, after)` (ungapped). The day-walk lives in the **service**;
@@ -102,14 +109,12 @@ backwards a fixed window, paginate older windows on demand. No future days.**
 - **Today's row.** Whether today is visually distinguished from any other day, and
   whether it is distinguished *differently* when empty. `HandleCalendar` has an
   `IsToday` flag and `CalendarCell.IsToday`; the ledger has no equivalent. The design
-  settled in ticket 08 makes no provision for it.
+  settled in ticket 08 makes no provision for it. Now has a second consumer: `?date=today`
+  renders through the same day-entry partial (ticket 05), so whatever distinguishes today on
+  the timeline must reach the filter view too.
 - **Delete's new home.** Ticket 08 demoted delete to the edit page. Whether the edit
   page's delete affordance is good enough to carry that traffic is unexamined; nobody
   has looked at `templates/edit.html` with this in mind.
-- **`?date=` under the ledger.** The single-day filter view still renders the old
-  card. [Should HandleDaily's two branches converge](./tickets/05-converge-handledaily-branches.md)
-  asks whether the branches converge; the ledger sharpens it, since a one-day ledger
-  with two rails and an empty total column may look absurd alone. <clears-with: 05>
 - **The Upcoming section's own design.** Ticket 03 fixed its content (future days,
   grouped, ungapped) but not its chrome: heading, divider, whether it collapses when
   long, whether its days carry `+` rows, and what it looks like when empty (the
