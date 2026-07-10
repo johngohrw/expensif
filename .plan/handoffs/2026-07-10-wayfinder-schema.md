@@ -16,8 +16,8 @@ the keystone of the daily-timeline map. See `3be8db4`, `f13356b`.
 empty. The daily-timeline effort is still all planning.
 
 Do not re-read the decisions here — they live in their artifacts. The map's
-Decisions-so-far indexes them; `.pocock-skills/wayfinder/SKILL.md` and its `FORMAT.md`
-hold the format contract.
+Decisions-so-far indexes them; `.pocock-skills/wayfinder/SKILL.md` and its
+`TRACKER-MARKDOWN.md` adapter hold the format contract.
 
 ## The tool lives outside this repo
 
@@ -32,7 +32,8 @@ go run ./cmd/wayfinder lint   ../expensif/.plan/daily-timeline   # exit 1 on err
 ```
 
 `lint` checks the invariants in
-[`FORMAT.md`](../../.pocock-skills/wayfinder/FORMAT.md); `status` prints the frontier.
+[`TRACKER-MARKDOWN.md`](../../.pocock-skills/wayfinder/TRACKER-MARKDOWN.md); `status`
+prints the frontier.
 It parses the old loose-header format too, warning on it. Module path is bare
 (`module wayfinder`), so `go install` from a remote needs a real path first.
 
@@ -51,13 +52,22 @@ First-by-number says 05.
 concern how the new query is *consumed* — easier once its contract has tests pinning it.
 10 also inherited the sharpest brief, since 04 handed it a real interface.
 
-Claim by setting `status: claimed` with `claimed_by` and `claimed_at`, and commit the
-claim before doing any work.
+Claim the ticket, and commit the claim, before doing any work — the skill and its
+adapter are authoritative on how.
 
 ## Design work proposed, deliberately not implemented
 
 The user asked for analysis, then said not to implement. Do not redo the analysis;
 either execute it or leave it.
+
+**Superseded later the same day. Execute none of it.** A subsequent session took the
+unrepresentability route instead: `status` is deleted as a stored field and derived from
+the body's `## Answer` / `## Ruled out` heading, and deleting a ticket is now banned.
+That subsumes the first proposal — there is no status left to flip — and the second was
+**rejected**, because it forbids a newly-created ticket from blocking an older one, an
+edge this very map wanted when ticket 10 appeared. The third is fixed.
+`TRACKER-MARKDOWN.md` is authoritative; the bullets below are kept only as the
+reasoning that led there.
 
 - **Flip `status: resolved` last.** Step 4 of *Work through the map* lists "append the
   answer, set status, append the map line" — an agent (me) set the status first,
@@ -119,8 +129,8 @@ changed.
 Apply only if available in your environment; all live in `.pocock-skills/<name>/SKILL.md`
 and are **not** auto-discovered — read the file and follow it.
 
-- `wayfinder` — the map's protocol, plus `FORMAT.md` for the schema and the seven
-  checks. Read both before touching `.plan/daily-timeline/`. One ticket per session.
+- `wayfinder` — the map's protocol, plus `TRACKER-MARKDOWN.md` for the schema and the
+  seven checks. Read both before touching `.plan/daily-timeline/`. One ticket per session.
 - `writing-great-skills` — if you act on the deferred design work above; the proposals
   came out of auditing wayfinder against it.
 - `domain-modeling` — terms have firmed up ("the rail", "Upcoming", "day entry", "empty
