@@ -73,6 +73,12 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   non-empty dates must parse as `YYYY-MM-DD`; future dates remain valid; empty dates
   still default to today. Both API and HTML form write paths reject unparseable dates
   with `ErrInvalidDate` → `400 Bad Request`. Existing garbage rows are left untouched.
+- [Re-shape DailyGroups around dates, not expenses](./tickets/04-date-indexed-daily-groups.md) —
+  `DailyGroups(ctx, limit)` splits into `DailyGroupsInRange(ctx, start, end)` (gap-filled)
+  and `UpcomingGroups(ctx, after)` (ungapped). The day-walk lives in the **service**;
+  `HandleCalendar` keeps its own. No new fields on `DailyGroup`, and `Expenses` is never
+  nil. The service is timezone-free — bare date strings in, UTC walk inside — so no
+  window edge straddles a DST transition.
 
 ## Not yet specified
 
@@ -90,14 +96,6 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   card. [Should HandleDaily's two branches converge](./tickets/05-converge-handledaily-branches.md)
   asks whether the branches converge; the ledger sharpens it, since a one-day ledger
   with two rails and an empty total column may look absurd alone. <clears-with: 05>
-- **Test strategy.** `internal/web/handlers_api_test.go` exists; a date-indexed
-  timeline wants tests for gap-filling, window edges, and the DST/timezone boundary.
-  Can't be specified until the query shape lands. <clears-with: 04>
-- **Timezone day boundaries.** `nowInTZ(prefs.Timezone)` defines "today", but
-  `Expense.Date` is a bare `2006-01-02` string. Whether a window edge can straddle a
-  DST transition, and whether that matters, isn't sharp yet. Sharpened slightly by
-  ticket 03: "future" is now a comparison against today, so the timezone that defines
-  today decides which section an expense lands in.
 - **The Upcoming section's own design.** Ticket 03 fixed its content (future days,
   grouped, ungapped) but not its chrome: heading, divider, whether it collapses when
   long, whether its days carry `+` rows, and what it looks like when empty (the

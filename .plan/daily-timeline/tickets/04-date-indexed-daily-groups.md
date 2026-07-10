@@ -1,9 +1,7 @@
 ---
 type: grilling
-status: claimed
+status: resolved
 blocked_by: [02, 03]
-claimed_by: claude-session-2893a7ab
-claimed_at: 2026-07-10T07:21:41Z
 ---
 
 # Re-shape DailyGroups around dates, not expenses
@@ -37,3 +35,74 @@ Resolve, applying `codebase-design` (this is a module-depth question):
   convert. Does that loop need guarding, or does it fall out clean?
 - Timezone: "today" comes from `nowInTZ(prefs.Timezone)` but `Expense.Date` is a bare
   `2006-01-02` string. Where is the window's end computed, and in whose zone?
+
+## Answer
+
+`DailyGroups(ctx, limit)` is replaced by **two service calls**, both returning
+`[]domain.DailyGroup` sorted newest-first:
+
+```go
+// Every day in [start, end] appears, empty days included.
+func (s *Service) DailyGroupsInRange(ctx context.Context, start, end string) ([]domain.DailyGroup, error)
+
+// Expenses dated after `after`, grouped by day. Not gap-filled.
+func (s *Service) UpcomingGroups(ctx context.Context, after string) ([]domain.DailyGroup, error)
+```
+
+**Range, not `(end string, days int)`.** It matches `ListExpensesInRange`, and ticket
+02's island pages backwards by fetching arbitrary older *ranges*, so a day-count
+parameter would be converted back to a range at every call site.
+
+**The gap-filling walk lives in the service.** Two callers need gap-filled groups —
+`HandleDaily` and ticket 02's JSON endpoint — so the seam is real rather than
+hypothetical. Today's expense-bucketing body is not deleted: it survives as
+`UpcomingGroups`, which [ticket 03](./03-future-dated-expenses.md) requires to be
+grouped but *not* gap-filled.
+
+**`HandleCalendar` is not refactored onto it.** The shared material is a three-line
+date walk. Everything else diverges: the calendar converts currency *before*
+bucketing (the daily view converts *after* grouping), it emits `CalendarCell` with
+totals, counts and heat quintiles rather than expense lists, and its range runs a year
+back to a year forward. Consuming `DailyGroupsInRange` would make it load 730 days of
+expense lists it immediately discards. By the deletion test a shared `eachDay()` helper
+is a pass-through — delete it and three lines reappear in two places.
+
+**No new fields on `DailyGroup`.** Emptiness stays derivable from `len(Expenses) == 0`;
+an `IsEmpty` field would give one fact two homes. Instead the service holds an
+invariant: **`Expenses` is never nil** — a gap-filled empty day carries
+`[]domain.Expense{}`, so it marshals to `"expenses": []` rather than `null` and ticket
+07's island can `.map` over it with no null guard.
+
+`IsToday` is **deferred**, not rejected. It is fog ("Today's row"), and it costs this
+signature nothing later: the handler already computes today, so when that patch
+graduates it can pass `Today` in page data and the template compares
+`{{if eq .Date $.Today}}`. Adding the field now would force `today` into the service as
+a third date parameter to render nothing.
+
+**The service stays timezone-free**, and this resolves the timezone fog outright. The
+handler computes `today := nowInTZ(prefs.Timezone)` — it already does — formats it to
+`2006-01-02`, and passes bare date strings across the seam. Inside, the walk iterates
+values from `time.Parse("2006-01-02", …)`, which are UTC, so **no window edge can
+straddle a DST transition**: the timezone is consulted exactly once, to name today, and
+never again. Ticket 03's "future" comparison is that same single naming.
+
+**The currency loop needs no guard.** Verified by reading `handlers_html.go:269-286`:
+for an empty group the inner loop runs zero times, `convTotal` stays `0`, and
+`ConvertedTotal` is assigned `0`. It falls out clean.
+
+**No new SQL.** `ListExpensesInRange` (`internal/repository/sqlite.go:69`) already takes
+an unbounded date range. `UpcomingGroups` reads `[after+1d, <far future>]` through the
+same call.
+
+**Order.** Both calls sort descending, matching the page: Upcoming sits above the
+timeline, so its furthest-future day is at the top and its last row is the day nearest
+today, flowing into today's row below.
+
+**The old signature had no defender** — `DailyGroups` had exactly one caller
+(`handlers_html.go:264`), so the 100-expense limit dies with it.
+
+### What this leaves
+
+The test strategy fog is now specifiable and graduates to
+[Test strategy for the date-indexed timeline](./10-test-strategy.md). The timezone fog
+is answered above and is struck rather than graduated.
