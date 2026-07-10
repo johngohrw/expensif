@@ -21,7 +21,7 @@ General-purpose agent skills, adapted from [Matt Pocock's skills](https://github
 - **[improve-codebase-architecture](./improve-codebase-architecture/SKILL.md)** — scan for deepening opportunities, present as a visual HTML report, then grill through the chosen one.
 - **[to-spec](./to-spec/SKILL.md)** — synthesize the current conversation into a spec at `.plan/<slug>/spec.md`.
 - **[to-tickets](./to-tickets/SKILL.md)** — break a plan or spec into tracer-bullet tickets at `.plan/<slug>/tickets.md`.
-- **[wayfinder](./wayfinder/SKILL.md)** — chart a big, foggy effort as a map of investigation tickets under `.plan/<slug>/`, resolved one per session.
+- **[wayfinder](./wayfinder/SKILL.md)** — chart a big, foggy effort as a map of investigation tickets, resolved one per session. Storage is adapter-specific; the default is [local markdown](./wayfinder/TRACKER-MARKDOWN.md) under `.plan/<slug>/`.
 - **[writing-great-skills](./writing-great-skills/SKILL.md)** — reference for writing and editing skills well.
 
 **Model-invoked** — reachable by the agent on its own (and by other skills), or by typing their name.
@@ -31,3 +31,13 @@ General-purpose agent skills, adapted from [Matt Pocock's skills](https://github
 - **[prototype](./prototype/SKILL.md)** — throwaway code that answers a design question: an interactive terminal app for logic/state questions, or radically different UI variants behind one switcher.
 - **[research](./research/SKILL.md)** — investigate a question against primary sources and capture cited findings as markdown.
 - **[review-code](./review-code/SKILL.md)** — two-axis review of a diff: Standards (repo conventions + smell baseline) and Spec (does it implement what was asked?).
+
+## Divergences from upstream
+
+Beyond the retargeting described in [LICENSE](./LICENSE), `wayfinder` makes three deliberate changes to Pocock's method. All three exist because upstream stores tickets on an **issue tracker**, and a tracker supplies guarantees a directory of files does not.
+
+- **A ticket is never deleted.** Upstream says "update or delete those tickets." A tracker's issue id is never reused, so deleting is unusual there and closing is the norm; a filename offers no such protection, and removing one dangles every `blocked_by` that named it. Ruled out is the way off the map. This lives in the [markdown adapter](./wayfinder/TRACKER-MARKDOWN.md), not the skill — a tracker-backed adapter need not adopt it.
+- **`undermined_by`.** Upstream has no equivalent: a decision whose premise a later ticket destroyed is simply `resolved`, and reads as settled. The field records what broke, so a green checkmark cannot launder a live problem.
+- **Out of scope never unblocks.** Upstream says a ticket is unblocked when every ticket blocking it is *closed*, and out-of-scope tickets are closed — so a dependent goes takeable on the strength of a decision nobody made. Here `out_of_scope` satisfies no blocking edge, and a ticket blocked by one is flagged: one of the two is mis-scoped.
+
+Upstream's own layering is preserved. The skill is tracker-agnostic method; storage mechanics live in an adapter, and the local-markdown adapter is the default upstream names when no tracker is wired up.
