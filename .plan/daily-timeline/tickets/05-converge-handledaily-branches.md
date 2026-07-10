@@ -1,8 +1,10 @@
-# Should HandleDaily's two branches converge
+---
+type: grilling
+status: open
+blocked_by: [04]
+---
 
-Type: grilling
-Status: open
-Blocked by: 04
+# Should HandleDaily's two branches converge
 
 ## Question
 

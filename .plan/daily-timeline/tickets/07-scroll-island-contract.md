@@ -1,8 +1,10 @@
-# The infinite-scroll island's contract
+---
+type: grilling
+status: open
+blocked_by: [01, 04]
+---
 
-Type: grilling
-Status: open
-Blocked by: 01, 04
+# The infinite-scroll island's contract
 
 ## Question
 

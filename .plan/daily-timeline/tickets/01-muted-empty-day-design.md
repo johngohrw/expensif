@@ -1,8 +1,10 @@
-# Muted empty-day card design
+---
+type: prototype
+status: resolved
+blocked_by: []
+---
 
-Type: prototype
-Status: resolved
-Blocked by: none
+# Muted empty-day card design
 
 ## Question
 

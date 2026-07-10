@@ -1,8 +1,10 @@
-# Contain the day-card chrome drift
+---
+type: grilling
+status: open
+blocked_by: [01, 04]
+---
 
-Type: grilling
-Status: open
-Blocked by: 01, 04
+# Contain the day-card chrome drift
 
 ## Question
 

@@ -1,8 +1,10 @@
-# Re-shape DailyGroups around dates, not expenses
+---
+type: grilling
+status: open
+blocked_by: [02, 03]
+---
 
-Type: grilling
-Status: open
-Blocked by: 02, 03
+# Re-shape DailyGroups around dates, not expenses
 
 ## Question
 

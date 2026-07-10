@@ -1,8 +1,10 @@
-# What happens to expenses dated after today
+---
+type: grilling
+status: resolved
+blocked_by: []
+---
 
-Type: grilling
-Status: resolved
-Blocked by: none
+# What happens to expenses dated after today
 
 ## Question
 

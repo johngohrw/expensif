@@ -1,8 +1,10 @@
-# Validate expense dates on the write path
+---
+type: task
+status: resolved
+blocked_by: []
+---
 
-Type: task
-Status: resolved
-Blocked by: none
+# Validate expense dates on the write path
 
 ## Question
 

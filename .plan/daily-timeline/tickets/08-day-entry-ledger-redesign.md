@@ -1,8 +1,11 @@
-# Redesign the day entry as a ledger row
+---
+type: prototype
+status: resolved
+blocked_by: []
+assets: [../assets/day-entry-ledger.html.approved]
+---
 
-Type: prototype
-Status: resolved
-Blocked by: none
+# Redesign the day entry as a ledger row
 
 ## Question
 

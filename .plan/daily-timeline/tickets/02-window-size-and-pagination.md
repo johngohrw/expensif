@@ -1,8 +1,11 @@
-# Window size and how older days load
+---
+type: grilling
+status: resolved
+blocked_by: []
+undermined_by: [08]
+---
 
-Type: grilling
-Status: resolved
-Blocked by: none
+# Window size and how older days load
 
 ## Question
 
@@ -32,6 +35,14 @@ This ticket blocks the query shape, so it also owes an answer to: what does the
 handler need to ask the repository for — a window of expenses, or a window of days?
 
 ## Answer
+
+**Undermined by [Redesign the day entry as a ledger row](./08-day-entry-ledger-redesign.md).**
+The island was chosen when every expense on this page was already client-rendered by
+`data-table`, so an island cost nothing that was not already spent. Ticket 08 drops
+`data-table` from the daily view, and the page now renders expenses server-side and works
+without JS. The decision below still stands — nobody has reopened it, and the user chose it
+deliberately — but the map's "server-render unless forced" tiebreaker now applies to it in a
+way it did not when it was taken.
 
 **Window is a rolling 30 days from today**: `[today-29, today]`. Always 30 cards, today
 always first, no ragged first window. Month-alignment was rejected because on the 1st

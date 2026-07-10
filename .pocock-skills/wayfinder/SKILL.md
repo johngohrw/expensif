@@ -22,6 +22,11 @@ The map lives at `.plan/<effort-slug>/map.md` — the canonical artifact. Its ti
 
 The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place — its ticket — so the map never restates it, only gists it and links.
 
+Two rules keep the index honest, because a map that has drifted misleads every session that trusts it, and it does so silently:
+
+- **The map may restate a decision's gist. It may never restate a ticket's status, type, or edges.** A gist is prose, lossy on purpose, and cannot be derived — that is why the map reads in one pass. The facts live in the ticket's frontmatter, and a fact with two homes goes stale in one of them.
+- **Never state current progress outside a ticket's frontmatter** — no counts, no statuses, in a README, a contributor guide, or anywhere else that claims to say where the effort stands today. "Four of nine resolved" is true for a week and wrong forever after, and the reader who trusts it cannot tell. Point at the map, or count when asked. A *dated* handoff recording what one session did is history rather than state, and is exempt: it does not drift, because it never claimed to be current.
+
 ### The map body
 
 The whole map at low resolution, loaded once per session. Open tickets are **not** listed — they are open ticket files, found by scanning `tickets/`.
@@ -54,25 +59,37 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ### Tickets
 
-Each ticket is a file at `.plan/<effort-slug>/tickets/NN-<slug>.md`, numbered from `01`; the number is its identity. Its body is the question, sized to one fresh agent session:
+Each ticket is a file at `.plan/<effort-slug>/tickets/NN-<slug>.md`, numbered from `01`; the number is its identity. Its **frontmatter holds the ticket's facts** — each has exactly one correct value, and this is the only place any of them is written. Its body is the question, sized to one fresh agent session:
 
 ```markdown
-# <Ticket title>
+---
+type: research | prototype | grilling | task
+status: open | claimed | resolved | out_of_scope
+blocked_by: [NN, NN]                 # [] when none
+claimed_by: <session or agent id>    # only while status: claimed
+claimed_at: <RFC 3339 timestamp>     # only while status: claimed
+undermined_by: [NN]                  # optional — see Undermined decisions
+assets: [<repo-relative path>]       # optional
+---
 
-Type: <research | prototype | grilling | task>
-Status: <open | claimed | resolved>
-Blocked by: <NN, NN — or "none">
+# <Ticket title>
 
 ## Question
 
 <the decision or investigation this ticket resolves>
 ```
 
-A session **claims** a ticket by setting `Status: claimed` and saving, **first**, before any work, so concurrent sessions skip it. Commit the claim promptly — on a shared repo, other clones only see it once it lands.
+A session **claims** a ticket by setting `status: claimed` with `claimed_by` and `claimed_at`, and saving, **first**, before any work, so concurrent sessions skip it. Commit the claim promptly — on a shared repo, other clones only see it once it lands. A claim carrying no timestamp cannot be told apart from a session that died mid-ticket, and the frontier will step around that ticket forever.
 
-Blocking is the `Blocked by:` line. A ticket is **unblocked** when every ticket it lists is `resolved`; the **frontier** is the open, unblocked, unclaimed tickets — the edge of the known. To find it, scan `tickets/`; first by number wins.
+Blocking is the `blocked_by` list. A ticket is **unblocked** when every ticket it lists is `resolved`; the **frontier** is the open, unblocked, unclaimed tickets — the edge of the known. To find it, scan `tickets/`; first by number wins.
 
-The answer isn't part of the body — it's recorded on resolution (see [Work through the map](#work-through-the-map)). Assets created while resolving a ticket (research notes, prototype code) are saved in the repo and linked from the ticket, not pasted in.
+`out_of_scope` is closed but it is **not** resolved, and it never satisfies a `blocked_by` edge. A ticket blocked by an out-of-scope ticket can therefore never unblock — which means one of the two is mis-scoped, and you should say which.
+
+The answer isn't part of the body — it's recorded on resolution (see [Work through the map](#work-through-the-map)). Assets created while resolving a ticket (research notes, prototype code) are saved in the repo, linked from the ticket's `assets:` list, and not pasted in.
+
+### Undermined decisions
+
+A resolved ticket sometimes rests on a premise that a later ticket destroys. Don't silently re-decide it, and don't leave it looking sound: add `undermined_by: [NN]` to the ticket whose premise broke, naming the ticket that broke it, and open its `## Answer` with a line saying so. The decision still stands — nobody has reopened it — but every session that reads the map can now see what it is standing on. A decision recorded as simply `resolved` reads as settled, and that is precisely how a live problem gets laundered into a checkmark.
 
 ## Ticket Types
 
@@ -89,6 +106,14 @@ The map is _deliberately_ incomplete: don't chart what you can't yet see. Beyond
 
 The map's **Not yet specified** section is where that dim view is written down: the suspected question, the area to revisit later. It's the undiscovered frontier _toward_ the destination — everything here is in scope, just not sharp enough to ticket. Write as loosely or as fully as the view allows; it doubles as a signpost for collaborators reading where the effort is headed.
 
+Each patch is one bullet whose **bolded lead sentence is its title** — the patch's identity, so it can be referred to and struck once it graduates. Where you already know which open ticket will clear it, anchor it; leave the anchor off when you don't. The title and the anchor are a patch's only structure — everything after them is prose, as loose as the view allows.
+
+```markdown
+- **<Patch title>.** <prose> <clears-with: NN>
+```
+
+A patch's title must not restate a live ticket. That tracks one question in two places, once sharply and once vaguely, and the vague copy is the one that rots.
+
 **Fog or ticket?** The test is whether you can state the question precisely now — _not_ whether you can answer it now.
 
 - **Ticket when** the question is already sharp — even if it's blocked and you can't act on it yet.
@@ -102,7 +127,29 @@ Fog only ever gathers _toward_ the destination. The destination fixes the scope,
 
 Out-of-scope work never graduates — the frontier stops at the destination — so it returns only if the destination is redrawn, and then as a fresh effort, not a resumption.
 
-Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination — mis-scoped in while charting, or exposed by a resolution — **close it**: set `Status: resolved` with a one-line `## Answer` saying it was ruled out of scope (a closed ticket is unambiguously off the frontier), and leave one line in the map's **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked — a scope boundary isn't a step on it.
+Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination — mis-scoped in while charting, or exposed by a resolution — **close it**: set `status: out_of_scope` with a one-line `## Answer` saying it was ruled out (a closed ticket is unambiguously off the frontier), and leave one line in the map's **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked — a scope boundary isn't a step on it.
+
+`out_of_scope` is its own status rather than a flavour of `resolved` for exactly this reason: anything counting the decisions made would otherwise count a boundary as a step.
+
+## What stays prose
+
+Structure only what has exactly one correct value: status, type, edges, claims, anchors. A machine can check those, and a second copy of one is a bug waiting to happen.
+
+Everything else stays unstructured, permanently. The **Destination**, the **Notes**, a ticket's **Question**, its **Answer**, and a decision's one-line gist in Decisions-so-far are lossy human summaries — nothing can derive them, and no field should try to hold them. Give the prose fields a schema and you have built a ticket tracker and thrown away the thing this skill is for.
+
+## Verify before you commit
+
+The map is shared memory: the next session trusts it without re-deriving it, so drift misleads silently. After resolving a ticket, and before committing anything under `.plan/`, check that:
+
+1. Every `blocked_by` names a ticket that exists, no ticket blocks itself, and there is no cycle.
+2. A ticket is `resolved` or `out_of_scope` **iff** it has an `## Answer`.
+3. Every `resolved` ticket appears exactly once in **Decisions so far**, and everything linked there is `resolved`.
+4. Every `out_of_scope` ticket appears in **Out of scope**, and none appears in Decisions-so-far.
+5. Every `claimed` ticket carries `claimed_by` and `claimed_at`, and none of those is stale.
+6. No fog patch's title restates a live ticket, and no `<clears-with: NN>` names a ticket already `resolved` — that patch should have graduated into a ticket, or been struck.
+7. No ticket number is used twice, and nothing outside a ticket's frontmatter states a status or a count.
+
+It is a checklist, not a ceremony — seven greps. Where the repo has a tool that performs it, run that instead; this skill needs no tool and assumes none.
 
 ## Invocation
 
@@ -123,9 +170,10 @@ User invokes with a loose idea.
 User invokes with a map (a path under `.plan/`, or the effort's name). A ticket is **optional** — without one, you pick the next decision, not the user.
 
 1. Load the **map** — the low-res view, not every ticket body.
-2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it**: set `Status: claimed` before any work.
+2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it**: set `status: claimed` with `claimed_by` and `claimed_at` before any work.
 3. Resolve it — **zoom as needed**: read the full body of any related or resolved ticket on demand; invoke the skills the `## Notes` block names. If in doubt, grill (with `domain-modeling` applied).
-4. Record the resolution: append the answer under an `## Answer` heading in the ticket file, set `Status: resolved`, and **append a context pointer** to the map's Decisions-so-far (gist + link).
-5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals a ticket — this one or another — sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
+4. Record the resolution: append the answer under an `## Answer` heading in the ticket file, set `status: resolved`, clear `claimed_by` and `claimed_at`, and **append a context pointer** to the map's Decisions-so-far (gist + link).
+5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals a ticket — this one or another — sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets; if it breaks the premise of a decision already made, mark that ticket `undermined_by` rather than quietly re-deciding it.
+6. **Verify before committing** — see the checklist below.
 
 The user may run unblocked tickets in parallel, so expect other sessions to be editing `.plan/` concurrently.

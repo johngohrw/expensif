@@ -87,11 +87,12 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   page's delete affordance is good enough to carry that traffic is unexamined; nobody
   has looked at `templates/edit.html` with this in mind.
 - **`?date=` under the ledger.** The single-day filter view still renders the old
-  card. Ticket 05 asks whether the branches converge; the ledger sharpens it, since a
-  one-day ledger with two rails and an empty total column may look absurd alone.
+  card. [Should HandleDaily's two branches converge](./tickets/05-converge-handledaily-branches.md)
+  asks whether the branches converge; the ledger sharpens it, since a one-day ledger
+  with two rails and an empty total column may look absurd alone. <clears-with: 05>
 - **Test strategy.** `internal/web/handlers_api_test.go` exists; a date-indexed
   timeline wants tests for gap-filling, window edges, and the DST/timezone boundary.
-  Can't be specified until the query shape lands.
+  Can't be specified until the query shape lands. <clears-with: 04>
 - **Timezone day boundaries.** `nowInTZ(prefs.Timezone)` defines "today", but
   `Expense.Date` is a bare `2006-01-02` string. Whether a window edge can straddle a
   DST transition, and whether that matters, isn't sharp yet. Sharpened slightly by
