@@ -1,8 +1,6 @@
 ---
 type: grilling
 blocked_by: [01, 04]
-claimed_by: claude-code-session-2026-07-10
-claimed_at: 2026-07-10T11:10:31Z
 ---
 
 # The infinite-scroll island's contract
@@ -66,3 +64,130 @@ So re-open the mechanism, honestly:
 
 If the island survives: it renders ledger rows, needs the oldest on-screen date and
 the earliest expense date as props, and the mount question below still stands.
+
+---
+
+## Answer
+
+**The island survives the honest re-ask.** The mechanism was put to the user again with
+the falsified premise stated plainly and the plain-link alternative priced — including
+that it would delete the island, the endpoint, and ticket 06 in one move. The user chose
+infinite scroll again. [Ticket 02](./02-window-size-and-pagination.md)'s decision therefore
+no longer rests on "the page already needs JS"; it rests on a deliberate preference for
+scroll ergonomics, taken with the cost visible. Ticket 02's `undermined_by` is discharged.
+
+Everything below follows from that, and from the standing rule this ticket kept reaching
+for: **logic and formatting stay in Go; the island renders strings and holds a cursor.**
+
+### The endpoint
+
+`GET /api/daily?start=YYYY-MM-DD&end=YYYY-MM-DD`, in `handlers_api.go`, behind the
+existing `apiResponse{Data, Error}` envelope. It calls the same
+`DailyGroupsInRange(ctx, start, end)` that `HandleDaily` calls — ticket 04 already named
+this endpoint as its second caller.
+
+**A range, not `?before=&days=30`.** Ticket 04 rejected `(end, days)` for the service
+because the island pages by arbitrary ranges and a day-count would be converted back to a
+range at every call site. The same argument binds the endpoint.
+
+### The payload is display-ready
+
+`Data` is an object, not a bare array:
+
+```json
+{"data": {
+  "groups": [{"date": "2026-06-11", "humanDate": "Thu 11 Jun",
+              "total": "$42.00", "expenses": [...]}],
+  "next": {"start": "2026-04-13", "end": "2026-05-12"}
+}}
+```
+
+A **web-layer DTO**, not `domain.DailyGroup` — ticket 04 forbids new fields on the domain
+type, and `humanDate`/`total` are display fields. Go's `humanDate` and `printf "%.2f"`
+stay the only formatters of any date or number on the page, so the TSX cannot round or
+place a currency symbol differently from the template at the 30-day seam. Only Tailwind
+class strings duplicate, which is the trade `templates/partials/button.html:1-3` already
+documents as convention.
+
+`convertedTotal` **does not appear**. Currency conversion runs in the handler before
+marshalling, so `total` is already converted and symbolised; shipping both would put one
+fact in two homes. `date` survives alongside `humanDate` because it is an identifier, not
+a display string.
+
+Ticket 04's **`Expenses` is never nil** invariant carries into the DTO: an empty day
+marshals `"expenses": []`, and the island `.map`s with no null guard.
+
+### Pagination is a server-issued cursor
+
+Each response carries `next` — the range to fetch after this one — or `null` when the
+earliest expense has been reached. The first cursor is server-rendered into `data-props`.
+
+**The island does no date arithmetic and owns no stop condition.** Walking back a window,
+clamping the final short window to the earliest expense, and terminating all collapse into
+one rule, computed in `internal/web` from `GetEarliestExpenseDate`, with one place to test
+it. Ticket 07 originally proposed passing `oldest` and `earliest` as props and letting TSX
+subtract days and compare; that was rejected as the same duplication the payload decision
+just removed, one layer down.
+
+This absorbs the empty-database case for free: `GetEarliestExpenseDate` returns `""` when
+`MIN(date)` is NULL (`sqlite.go:241`), the first cursor is `null`, and the island never
+fetches. (The *page's* zero-expense empty state remains fog and is not decided here.)
+
+### Trigger and states
+
+`IntersectionObserver` on a foot sentinel, **one fetch in flight at a time**.
+
+- **ok** → append groups, re-arm the sentinel.
+- **`next` is null** → render the terminal marker, disconnect the observer.
+- **error** → disconnect the observer, replace the foot with an explicit **Retry** button.
+
+The observer is not left armed through a failure. A user who keeps scrolling against a
+down server would otherwise emit a burst of failing requests with no way to stop short of
+leaving the page. Auto-retry is refused; the retry is the user's.
+
+There is no "empty response" terminal condition. `DailyGroupsInRange` is gap-filled and
+always returns one group per day in the range, so a window is never empty — only `next`
+can be null.
+
+### Mounting
+
+The container is **server-empty**: sentinel, rows, marker and button are all client-created.
+`hydrateRoot` is therefore the wrong call, and both `lib/hydrate.tsx` and
+`entries/data-table.tsx` use it today.
+
+Add **`mountIsland(name, Component)`** to `ui/src/lib/hydrate.tsx`, beside `hydrateIsland`:
+same `[data-island]` lookup, same `data-props` JSON, but `createRoot` instead of
+`hydrateRoot`. It names the distinction the codebase has been fudging — hydrate a container
+the server filled, mount one it left empty. New Vite entry `dailyScroll` →
+`src/entries/daily-scroll.tsx`, a fifth input in `ui/vite.config.ts`.
+
+**Discovered, and deliberately not ticketed:** `data-table.tsx` calls `hydrateRoot` on a
+container `data-table.html` leaves empty — a hydration mismatch React silently recovers
+from by client-rendering. It is a real bug, `mountIsland` is its fix, and it is *outside
+this map's destination*: ticket 08 removes `data-table` from the daily view entirely, so
+no daily-timeline work depends on it. Fix it as separate work.
+
+### No-JS
+
+**No `<noscript>` fallback.** A JS-less user gets a fully functional 30-day ledger, and
+reaches any day in the past year through `calendar.html`'s plain `href`s
+(`/?date=…&from=calendar`). Only history older than a year needs JS — and the calendar
+cannot reach that either, since `HandleCalendar` renders a fixed year-back range and does
+not page.
+
+The deciding cost was structural, not effort: a `<noscript>` "load older" link needs
+`HandleDaily` to render an arbitrary `?before=` window — **a third branch, added while
+[ticket 05](./05-converge-handledaily-branches.md) is mid-flight on whether the existing
+two should converge.** This ticket declines to hand 05 a harder problem, and declines to
+build most of the plain-link option that was just rejected, for a user who cannot reach
+year-old history by any other route anyway.
+
+### What this hands the open tickets
+
+- [Ticket 06](./06-day-card-chrome-drift.md): its "cheaper alternative" is now **decided** —
+  the endpoint returns display-ready groups. 06 no longer prices that option; it decides
+  only how the class strings stay in sync, and whether the both-paths test earns its keep.
+- [Ticket 10](./10-test-strategy.md): the cursor rule is the one new server-side unit with
+  a sharp contract — final-window clamping, and `next == null` at the earliest expense and
+  on an empty database.
+- [Ticket 05](./05-converge-handledaily-branches.md): unchanged. Still two branches.

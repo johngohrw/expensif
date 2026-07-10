@@ -41,7 +41,9 @@ React, and the page already requires JS to show any expense. Do not reason as if
 daily view degrades gracefully today; it does not. **But the ledger changes this** —
 [ticket 08](./tickets/08-day-entry-ledger-redesign.md) drops `data-table` from the
 daily view, so once implemented the page renders expenses server-side and works
-without JS. Ticket 02's island decision was taken before that was true.
+without JS. Ticket 02's island decision was taken before that was true — and
+[ticket 07](./tickets/07-scroll-island-contract.md) has since re-put it to the user on the
+new facts, who chose the island again. The page is JS-free except for infinite scroll.
 
 Bounds are settled up front and constrain every ticket: **anchor at today, walk
 backwards a fixed window, paginate older windows on demand. No future days.**
@@ -73,6 +75,13 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   non-empty dates must parse as `YYYY-MM-DD`; future dates remain valid; empty dates
   still default to today. Both API and HTML form write paths reject unparseable dates
   with `ErrInvalidDate` → `400 Bad Request`. Existing garbage rows are left untouched.
+- [The infinite-scroll island's contract](./tickets/07-scroll-island-contract.md) — the island
+  survives an honest re-ask against the now JS-free page. `GET /api/daily?start=&end=` returns
+  **display-ready** groups, so Go owns every formatted date and number; pagination is a
+  **server-issued cursor** (`next`, or `null` at the earliest expense), so the island does no
+  date math and owns no stop condition. Sentinel-triggered, one fetch in flight, manual retry
+  on error. Mounts via a new `mountIsland` (`createRoot`), not `hydrateRoot`. No `<noscript>`
+  fallback — it would grow `HandleDaily` a third branch.
 - [Re-shape DailyGroups around dates, not expenses](./tickets/04-date-indexed-daily-groups.md) —
   `DailyGroups(ctx, limit)` splits into `DailyGroupsInRange(ctx, start, end)` (gap-filled)
   and `UpcomingGroups(ctx, after)` (ungapped). The day-walk lives in the **service**;

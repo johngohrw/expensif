@@ -1,7 +1,6 @@
 ---
 type: grilling
 blocked_by: []
-undermined_by: [08]
 ---
 
 # Window size and how older days load
@@ -35,13 +34,16 @@ handler need to ask the repository for — a window of expenses, or a window of 
 
 ## Answer
 
-**Undermined by [Redesign the day entry as a ledger row](./08-day-entry-ledger-redesign.md).**
+**Was undermined by [Redesign the day entry as a ledger row](./08-day-entry-ledger-redesign.md);
+re-affirmed by [The infinite-scroll island's contract](./07-scroll-island-contract.md).**
 The island was chosen when every expense on this page was already client-rendered by
 `data-table`, so an island cost nothing that was not already spent. Ticket 08 drops
 `data-table` from the daily view, and the page now renders expenses server-side and works
-without JS. The decision below still stands — nobody has reopened it, and the user chose it
-deliberately — but the map's "server-render unless forced" tiebreaker now applies to it in a
-way it did not when it was taken.
+without JS — which destroyed that premise. Ticket 07 re-opened the mechanism and put it to
+the user with the plain-link alternative priced (it would have deleted the island, the
+endpoint, and ticket 06 outright). The user chose infinite scroll again, deliberately, on
+scroll ergonomics rather than on a JS cost already sunk. The decision below now stands on
+that choice, so the `undermined_by` marker is discharged rather than carried.
 
 **Window is a rolling 30 days from today**: `[today-29, today]`. Always 30 cards, today
 always first, no ragged first window. Month-alignment was rejected because on the 1st

@@ -59,3 +59,29 @@ That strengthens the case for the cheaper option this ticket already floated: ha
 JSON endpoint return **display-ready** groups (formatted date, formatted total,
 formatted amounts) so the TSX side is a dumb renderer and all formatting logic stays
 in Go. Only the class strings duplicate then, exactly as `button.html` does it.
+
+---
+
+## Update — after ticket 07 (the island's contract)
+
+**That cheaper option is no longer this ticket's to price. It was taken.**
+[Ticket 07](./07-scroll-island-contract.md) specifies `GET /api/daily` as returning a
+display-ready web DTO: `humanDate`, and a formatted, already-converted `total`. Go's
+`humanDate` and `printf "%.2f"` are the only formatters of any date or number on the page.
+
+Two of this ticket's four bullets are therefore answered — the endpoint *does* return
+display-ready groups, and the island reimplements neither `formatDate`/`humanDate` nor the
+currency formatting. Rounding and symbol placement can no longer diverge at the seam.
+
+What is left is narrower than when this was written:
+
+- **The class strings still duplicate**, and they carry the ledger's three alignment
+  invariants (`self-start` on the expenses column, padding on rows not columns, explicit
+  `leading-4`) — the ones ticket 08 flagged as invisible in a screenshot. How do
+  `daily.html` and the TSX ledger stay in sync? `button.html`'s answer is a comment.
+- **Does the both-paths test still earn its keep?** Ticket 07 removed the formatting drift
+  such a test would most naturally have caught, which weakens the case for it. Ticket 10
+  owns test strategy — decide here whether this seam warrants more than a visual check, and
+  hand 10 the requirement rather than the test.
+- The island renders **expense rows**, which the card never duplicated because `DataTable`
+  drew them. That surface is still yours.
