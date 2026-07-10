@@ -1,6 +1,7 @@
 ---
 type: grilling
 blocked_by: []
+undermined_by: [06]
 ---
 
 # Window size and how older days load
@@ -54,11 +55,18 @@ standing "server-render unless forced" preference — recorded as a deliberate c
 the user, not an oversight. Plain-link options (`?days=` growing window, `?before=`
 pages) were offered and declined.
 
-**The island fetches JSON and renders appended day-cards in React.** A new endpoint
+~~**The island fetches JSON and renders appended day-cards in React.** A new endpoint
 returns `[]domain.DailyGroup` for a date range. Rejected: fetching HTML fragments,
 because `ui/src/entries/data-table.tsx` calls `init()` once at module load and
 `querySelectorAll`s the document — appended `[data-table-root]` nodes would never
-mount, and its `hydrateRoot` is the wrong call for freshly-fetched markup anyway.
+mount, and its `hydrateRoot` is the wrong call for freshly-fetched markup anyway.~~
+
+**Reversed by [Contain the day-card chrome drift](./06-day-card-chrome-drift.md).** The
+rejection above rested wholly on `data-table`, which [ticket 08](./08-day-entry-ledger-redesign.md)
+removed from this page. An appended ledger day contains no islands at all, so the endpoint
+serves **HTML** rendered by the same Go partial as the first window, and the island appends
+it. The island is not React. The window size, the island itself, and the termination rule
+below all stand.
 
 **The first 30-day window stays server-rendered** by `daily.html`; the island only
 appends windows below it. This keeps first paint fast and keeps muted empty-day cards

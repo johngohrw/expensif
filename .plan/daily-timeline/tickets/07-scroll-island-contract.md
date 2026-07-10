@@ -1,6 +1,7 @@
 ---
 type: grilling
 blocked_by: [01, 04]
+undermined_by: [06]
 ---
 
 # The infinite-scroll island's contract
@@ -68,6 +69,20 @@ the earliest expense date as props, and the mount question below still stands.
 ---
 
 ## Answer
+
+**Undermined by [Contain the day-card chrome drift](./06-day-card-chrome-drift.md).** This
+ticket specified a JSON payload without re-reading ticket 02's rejection of HTML fragments
+against ticket 08, which had voided that rejection's only stated reason. Ticket 06 found it.
+
+**Void:** the display-ready DTO, dropping `convertedTotal`, and `mountIsland`/`createRoot`.
+The endpoint serves HTML from the same Go partial as the first window, there is no DTO, and
+the island is not React. `GET /api/daily` is now `GET /daily/older`, in `handlers_html.go`.
+
+**Standing, and cheaper:** the island survives its re-ask; pagination is a server-issued
+cursor (carried as `data-next-*` attributes rather than a JSON field); range parameters, not
+`?before=&days=`; sentinel-triggered with one fetch in flight; terminal marker when the
+cursor is absent; manual retry on error, never an armed observer; and no `<noscript>`
+fallback. Read the sections below with that substitution in mind.
 
 **The island survives the honest re-ask.** The mechanism was put to the user again with
 the falsified premise stated plainly and the plain-link alternative priced — including

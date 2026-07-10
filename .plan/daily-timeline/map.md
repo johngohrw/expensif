@@ -53,9 +53,10 @@ backwards a fixed window, paginate older windows on demand. No future days.**
 <!-- one line per resolved ticket: gist + link -->
 
 - [Window size and how older days load](./tickets/02-window-size-and-pagination.md) —
-  rolling 30 days from today; older windows appended by a new infinite-scroll React
-  island fetching JSON; first window stays server-rendered; scroll stops at the
-  earliest expense. No new SQL needed — `ListExpensesInRange` already fits.
+  rolling 30 days from today; older windows appended by a new infinite-scroll island;
+  first window stays server-rendered; scroll stops at the earliest expense. No new SQL
+  needed — `ListExpensesInRange` already fits. *Undermined by 06: the island fetches HTML,
+  not JSON, and is not React; the window and termination rule stand.*
 - [Muted empty-day card design](./tickets/01-muted-empty-day-design.md) — an empty day
   is a **ledger line**, not a card: date gutter, "no expenses", and an always-visible
   `+`. Hover-only affordances rejected (mobile); full cards rejected (22 of 30 days
@@ -75,13 +76,17 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   non-empty dates must parse as `YYYY-MM-DD`; future dates remain valid; empty dates
   still default to today. Both API and HTML form write paths reject unparseable dates
   with `ErrInvalidDate` → `400 Bad Request`. Existing garbage rows are left untouched.
+- [Contain the day-card chrome drift](./tickets/06-day-card-chrome-drift.md) — **there is no
+  drift.** The endpoint serves HTML from the same Go partial as the first window, so the ledger
+  has one implementation. `GET /daily/older?start=&end=`, cursor carried as `data-next-*` on the
+  fragment. The foot's four states are server-rendered and toggled by `data-state`, keeping zero
+  Tailwind in TypeScript. The island is ~30 lines of vanilla TS, not React. Undermines 02 and 07.
 - [The infinite-scroll island's contract](./tickets/07-scroll-island-contract.md) — the island
-  survives an honest re-ask against the now JS-free page. `GET /api/daily?start=&end=` returns
-  **display-ready** groups, so Go owns every formatted date and number; pagination is a
-  **server-issued cursor** (`next`, or `null` at the earliest expense), so the island does no
-  date math and owns no stop condition. Sentinel-triggered, one fetch in flight, manual retry
-  on error. Mounts via a new `mountIsland` (`createRoot`), not `hydrateRoot`. No `<noscript>`
-  fallback — it would grow `HandleDaily` a third branch.
+  survives an honest re-ask against the now JS-free page. Sentinel-triggered, one fetch in
+  flight, manual retry on error rather than an armed observer, terminal marker at the earliest
+  expense, and a **server-issued cursor** so the island does no date math. No `<noscript>`
+  fallback — it would grow `HandleDaily` a third branch. *Undermined by 06: its JSON DTO and
+  `mountIsland` are void; everything above stands.*
 - [Re-shape DailyGroups around dates, not expenses](./tickets/04-date-indexed-daily-groups.md) —
   `DailyGroups(ctx, limit)` splits into `DailyGroupsInRange(ctx, start, end)` (gap-filled)
   and `UpcomingGroups(ctx, after)` (ungapped). The day-walk lives in the **service**;

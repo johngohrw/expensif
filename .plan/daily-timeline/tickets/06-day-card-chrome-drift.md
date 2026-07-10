@@ -1,8 +1,6 @@
 ---
 type: grilling
 blocked_by: [01, 04]
-claimed_by: claude-code-session-2026-07-10
-claimed_at: 2026-07-10T12:29:45Z
 ---
 
 # Contain the day-card chrome drift
@@ -87,3 +85,80 @@ What is left is narrower than when this was written:
   hand 10 the requirement rather than the test.
 - The island renders **expense rows**, which the card never duplicated because `DataTable`
   drew them. That surface is still yours.
+
+---
+
+## Answer
+
+**There is no drift to contain. The duplication is deleted rather than managed.**
+
+The endpoint serves **rendered HTML from the same Go partial that renders the first
+window**, and the island appends it. The ledger has exactly one implementation, in one
+language. This ticket's four bullets — class-string sync, the currency-formatting seam,
+`humanDate` in JS, the display-ready payload — are not answered. They stop existing.
+
+### What unlocked this
+
+[Ticket 02](./02-window-size-and-pagination.md) rejected HTML fragments for exactly one
+stated reason: `data-table.tsx` calls `init()` at module load and `querySelectorAll`s the
+document, so `[data-table-root]` nodes appended later would never mount.
+
+**That reason was entirely about `data-table`, and [ticket 08](./08-day-entry-ledger-redesign.md)
+removed `data-table` from this page.** An appended ledger day contains no islands at all:
+every row in the approved markup is a plain `<a>`, and delete was demoted to the edit page.
+There is nothing to mount, so there is no reason to ship JSON and re-render it in React.
+
+This is the same move ticket 07 made for the island itself — a decision resting on a
+premise ticket 08 destroyed — applied to the clause immediately below it in ticket 02's
+answer, which nobody had re-read against 08.
+
+### The endpoint
+
+`GET /daily/older?start=YYYY-MM-DD&end=YYYY-MM-DD` in `handlers_html.go`, **not**
+`handlers_api.go`. It returns `text/html`, not the `apiResponse{Data, Error}` envelope: it
+is a template partial served over HTTP, and it has no consumer but this island.
+
+The cursor semantics from ticket 07 survive unchanged, carried as attributes rather than
+JSON. The fragment's wrapper div holds `data-next-start` / `data-next-end`, **absent** when
+the earliest expense has been reached. The island reads them and never does date
+arithmetic — the property ticket 07 was protecting, preserved by different means.
+
+### The foot
+
+`daily.html` renders all four foot states once — sentinel, loading, error-with-retry,
+terminal marker — and the island only sets `data-state` on the wrapper; CSS reveals one.
+
+**Zero Tailwind classes and zero markup in TypeScript.** Had the island built its own
+spinner and terminal marker, those strings would carry the ledger's 28px rhythm and
+`leading-4` pinning, and this ticket's drift surface would have crept back in through the
+foot. The terminal marker's text is server-known anyway; the error state, which by
+definition cannot be fetched, has to exist client-side regardless of payload format.
+
+### Consequences
+
+- **The island is no longer React.** It is a sentinel, a fetch, an `insertAdjacentHTML`,
+  and a cursor — roughly thirty lines of vanilla TypeScript. It still needs a Vite entry
+  for bundling. `AGENTS.md` describes the architecture as "React Islands"; this is the
+  first island that is not one, and that sentence will want revisiting when the spec lands.
+- **Tailwind is a non-issue, verified.** `base.html:9` loads the Play CDN
+  (`cdn.tailwindcss.com`), which observes DOM mutations and styles inserted nodes. There
+  are no build-time content globs to configure.
+- **Month breaks need no cross-window state.** Ticket 08 specified a Go helper comparing
+  adjacent groups, which would have been awkward at a window seam. The timeline is
+  gap-filled and contiguous, so the day below `D` is always `D-1`, and a month break is
+  exactly `D.Day == 1`. It is a pure function of the date.
+- **For [ticket 10](./10-test-strategy.md):** the both-paths test this ticket was going to
+  demand is now unbuildable and unnecessary — there is one path. What replaces it is a
+  much cheaper assertion: that `/daily/older` and `HandleDaily` invoke the same partial.
+
+### What this undermines
+
+Recorded rather than quietly re-decided:
+
+- [Ticket 02](./02-window-size-and-pagination.md) — its "the island fetches JSON and renders
+  appended day-cards in React" clause, and its rejection of HTML fragments. The 30-day
+  rolling window, the island itself, and termination at the earliest expense all stand.
+- [Ticket 07](./07-scroll-island-contract.md) — the display-ready DTO, dropping
+  `convertedTotal`, and `mountIsland`/`createRoot` are void. The server-issued cursor, the
+  sentinel with one fetch in flight, manual retry on error, and the refusal of a
+  `<noscript>` fallback all stand, and are now cheaper.
