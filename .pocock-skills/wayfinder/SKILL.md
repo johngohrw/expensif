@@ -27,7 +27,7 @@ The map is an **index**, not a store. It lists the decisions made and points at 
 Two rules keep the index honest, because a map that has drifted misleads every session that trusts it, and it does so silently:
 
 - **The map gists a decision and links it; a ticket's status, type, and edges are read from its frontmatter, never copied into prose.** A gist is lossy on purpose and cannot be derived — that is why the map reads in one pass. A fact copied has two homes, and goes stale in one of them.
-- **Progress is derived from the tickets** — count them when the question is asked, wherever it is asked: a README, a contributor guide, the map itself. Never write the count down. "Four of nine resolved" is true for a week and wrong forever after, and the reader who trusts it cannot tell. A *dated* handoff recording what one session did is history rather than state, and is exempt: it never claimed to be current, so it cannot drift.
+- **Progress is derived from the tickets** — count them when the question is asked, wherever it is asked: a README, a contributor guide, the map itself. Never write the count down. "Four of nine resolved" is true for a week and wrong forever after, and the reader who trusts it cannot tell. A *dated* handoff is exempt where it **records** what one session did — that is history, and history never claimed to be current. The exemption stops at the record: an instruction written into a handoff ("claim it by setting…") goes stale exactly like a count, so point at the skill rather than restating it.
 
 ### Tickets
 

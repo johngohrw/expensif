@@ -13,8 +13,10 @@ Decisions-so-far indexes them with a one-line gist and a link. Start there.
 ## Where to pick up
 
 The frontier is two unblocked tickets. They are independent, so two sessions can run
-them in parallel — claim by setting `Status: claimed` and **commit the claim before
-doing any work**, or the other session will duplicate it.
+them in parallel — claim by setting `status: claimed` with `claimed_by` and `claimed_at`,
+and **commit the claim before doing any work**, or the other session will duplicate it.
+(The ticket format moved to frontmatter after this handoff was written; the skill and
+`FORMAT.md` are authoritative.)
 
 - [Re-shape DailyGroups around dates](../daily-timeline/tickets/04-date-indexed-daily-groups.md)
   — **the keystone.** Tickets 05, 06, and 07 all queue behind it. It inherits a
