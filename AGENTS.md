@@ -36,7 +36,7 @@ Tests live beside the code they cover (`internal/web/handlers_api_test.go`, `ui/
 
 Current contents: `.plan/expensif/` (project spec, brief, testing strategy), `.plan/react-islands/spec.md` (migration spec), `.plan/daily-timeline/` (active wayfinder map — daily view redesign), `.plan/handoffs/` (session history).
 
-How far along that map is, and which ticket is ready to claim, is derived from the tickets' frontmatter — never restated here, where it would drift. Read `.plan/daily-timeline/map.md` and scan `tickets/`.
+How far along that map is, and which ticket is ready to claim, is derived from the tickets — never restated here, where it would drift. Read `.plan/daily-timeline/map.md` and scan `tickets/`.
 
 Read the most recent handoffs to catch up on project state. The `session-*.md` files there predate this naming convention and are kept as a historical archive — do not rewrite them; write new handoffs using the dated convention above.
 

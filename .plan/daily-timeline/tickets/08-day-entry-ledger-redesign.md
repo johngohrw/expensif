@@ -1,6 +1,5 @@
 ---
 type: prototype
-status: resolved
 blocked_by: []
 assets: [../assets/day-entry-ledger.html.approved]
 ---

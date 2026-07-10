@@ -1,6 +1,5 @@
 ---
 type: task
-status: resolved
 blocked_by: []
 ---
 

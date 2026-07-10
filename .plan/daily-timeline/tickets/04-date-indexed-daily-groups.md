@@ -1,6 +1,5 @@
 ---
 type: grilling
-status: resolved
 blocked_by: [02, 03]
 ---
 
