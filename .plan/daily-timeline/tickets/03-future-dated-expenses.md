@@ -16,7 +16,7 @@ Nobody pads a calendar with a year of empty future months by accident; the app
 expects future-dated expenses to exist. Confirm that reading before deciding.
 
 Today's daily view has the bug in a quieter form: `DailyGroups` sorts by date
-descending and takes the last 100 expenses, so a future-dated expense *does* appear,
+descending and takes the last 100 expenses, so a future-dated expense _does_ appear,
 at the top, above today. Once today becomes the anchor, it silently vanishes.
 
 Resolve:
@@ -45,7 +45,7 @@ Then the timeline proper is unchanged: window end is **today**, never later.
 - **Window end = latest expense.** Uniform, one rule — but gap-filling makes it
   unusable. A single expense dated 2031 renders ~1,600 muted empty rows above today.
   The property that makes the past readable makes the future absurd.
-- **Hide them.** Would silently *remove* behaviour that exists today (see below), and
+- **Hide them.** Would silently _remove_ behaviour that exists today (see below), and
   strand the expense: unreachable from the daily view, and from the calendar too if
   it is more than a year out. Visible only in the flat list.
 
@@ -73,7 +73,7 @@ lands at the very top of the page. The user chose to **fix this at the source**:
 validate dates in `validateExpenseInput` rather than defend on read. Tracked as
 [Validate expense dates on the write path](./09-validate-expense-dates.md).
 
-**Accepted residual risk:** the daily view will *not* parse defensively. Rows written
+**Accepted residual risk:** the daily view will _not_ parse defensively. Rows written
 before the validation lands — in any already-deployed database — will still sort into
 Upcoming as garbage day headers. The local dev database is empty; deployed ones may
 not be. A one-line skip-on-parse-failure in the grouping loop would close this, and
