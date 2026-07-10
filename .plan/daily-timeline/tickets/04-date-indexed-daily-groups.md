@@ -1,7 +1,9 @@
 ---
 type: grilling
-status: open
+status: claimed
 blocked_by: [02, 03]
+claimed_by: claude-session-2893a7ab
+claimed_at: 2026-07-10T07:21:41Z
 ---
 
 # Re-shape DailyGroups around dates, not expenses
