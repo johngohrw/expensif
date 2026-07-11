@@ -116,22 +116,14 @@ backwards a fixed window, paginate older windows on demand. No future days.**
 
 ## Not yet specified
 
-- **The zero-expense-ever empty state.** `daily.html:55` currently swaps the whole
-  page for "No expenses yet." Once every day is a row, a brand-new account renders 30
-  muted ledger lines instead. Which wins?
-- **Today's row.** Whether today is visually distinguished from any other day, and
-  whether it is distinguished *differently* when empty. `HandleCalendar` has an
-  `IsToday` flag and `CalendarCell.IsToday`; the ledger has no equivalent. The design
-  settled in ticket 08 makes no provision for it. Now has a second consumer: `?date=today`
-  renders through the same day-entry partial (ticket 05), so whatever distinguishes today on
-  the timeline must reach the filter view too.
-- **Delete's new home.** Ticket 08 demoted delete to the edit page. Whether the edit
-  page's delete affordance is good enough to carry that traffic is unexamined; nobody
-  has looked at `templates/edit.html` with this in mind.
-- **The Upcoming section's own design.** Ticket 03 fixed its content (future days,
-  grouped, ungapped) but not its chrome: heading, divider, whether it collapses when
-  long, whether its days carry `+` rows, and what it looks like when empty (the
-  common case). Ticket 08's ledger is the raw material.
+<!-- Empty. Every patch has graduated into a ticket; the fog is clear to the destination. -->
+
+The four patches that stood here — the zero-expense-ever empty state, today's row,
+delete's new home, and the Upcoming section's chrome — graduated into tickets 11–14 once
+[ticket 10](./tickets/10-test-strategy.md) closed the last question they could have hung
+on. They are questions of *rendering*, and every decision they rest on (the ledger, the
+muted line, the `?date=` consumer, Upcoming's content) is now made. Nothing on the route
+to the destination is unspecifiable any more — what remains is takeable.
 
 ## Out of scope
 
