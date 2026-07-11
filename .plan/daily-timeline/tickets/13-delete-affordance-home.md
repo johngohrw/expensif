@@ -1,6 +1,8 @@
 ---
 type: prototype
 blocked_by: [08]
+claimed_by: claude-code-session-2026-07-12
+claimed_at: 2026-07-11T18:12:00Z
 ---
 
 # Where delete lives once the ledger lands
