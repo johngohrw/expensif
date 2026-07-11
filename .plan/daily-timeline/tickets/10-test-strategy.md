@@ -1,6 +1,8 @@
 ---
 type: grilling
 blocked_by: [04]
+claimed_by: claude-code-session-2026-07-12
+claimed_at: 2026-07-11T17:51:06Z
 ---
 
 # Test strategy for the date-indexed timeline
