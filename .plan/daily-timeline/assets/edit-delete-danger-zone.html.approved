@@ -1,0 +1,53 @@
+{{/*
+  APPROVED — ticket 13, variant A (the danger zone), with the ?return= path folded in.
+  This is the markup to build; it is NOT wired into the app. The prototype that
+  produced it (three variants behind ?variant= on the real edit page) has been deleted.
+
+  Sits in templates/edit.html, AFTER the closing </form> of the edit form.
+  It MUST be a sibling form, never nested: edit.html is already one
+  <form method="POST" action="/expenses/edit/{id}">, and a nested <form> is invalid HTML.
+
+  Chosen over:
+    B — a server-rendered confirmation page showing the expense being destroyed.
+    C — a trash icon in the title row with a CSS-only <details> reveal.
+  Both were zero-JS, which turned out to buy nothing: the edit page already mounts the
+  category-pills and description-pills islands (handlers_html.go:367), so it requires JS
+  regardless. Ticket 08's JS-free property belongs to the daily view, not to this page.
+
+  Known cost, accepted: confirm() states the expense ID and nothing else. It cannot show
+  the amount, the description, or the date. The guard is only as good as "#49".
+
+  See .plan/daily-timeline/tickets/13-delete-affordance-home.md
+*/}}
+
+<div class="mt-10 pt-6 border-t border-gray-200">
+  <div class="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2">
+    Danger zone
+  </div>
+  <div class="flex items-center justify-between gap-4">
+    <p class="text-sm text-gray-500">
+      Deleting an expense is permanent. It cannot be undone.
+    </p>
+
+    {{/* Sibling form. Separate action, separate method target, never nested. */}}
+    <form
+      method="POST"
+      action="/expenses/delete/{{.Expense.ID}}"
+      onsubmit="return confirm('Delete expense #{{.Expense.ID}}?')"
+    >
+      {{/* The return path, server-issued. HandleEdit reads ?return= off the URL that
+           brought the user here (the ledger row's Edit link carries it) and passes it
+           through. HandleDelete validates it as a local path before redirecting:
+           must begin with "/", must not begin with "//", must not contain a scheme.
+           Falls back to "/" when absent or rejected. */}}
+      <input type="hidden" name="return" value="{{.ReturnTo}}" />
+
+      <button
+        type="submit"
+        class="bg-red-50 text-red-600 hover:bg-red-100 rounded px-3 py-1.5 text-sm font-medium shrink-0"
+      >
+        Delete expense
+      </button>
+    </form>
+  </div>
+</div>

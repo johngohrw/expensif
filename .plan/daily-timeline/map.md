@@ -114,6 +114,17 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   "blocker" does not exist (`server_test.go:45` already renders in-package), and its
   never-assert-on-HTML rule is narrowed, not broken.
 
+- [Where delete lives once the ledger lands](./tickets/13-delete-affordance-home.md) — delete
+  stays demoted to the edit page and is **built** there as a "Danger zone" at the foot: a
+  **sibling** form (the page is already a form; nesting is invalid HTML), one click plus
+  `confirm()`. Prototyped three ways on the real page; the two zero-JS variants lost because
+  the premise was false — `HandleEdit` already mounts two islands, so **the edit page has
+  always required JS**, and ticket 08's JS-free property is the daily view's alone. Delete's
+  redirect becomes a server-issued `?return=` (local-path validated, `/` fallback) because the
+  edit page is reachable from three places. **`/expenses` is now the intentional bulk-delete
+  surface** — `list.html` keeps its `data-table`, and nothing may drop it without replacing the
+  affordance. Approved markup: [`assets/edit-delete-danger-zone.html.approved`](./assets/edit-delete-danger-zone.html.approved).
+
 ## Not yet specified
 
 <!-- Empty. Every patch has graduated into a ticket; the fog is clear to the destination. -->
