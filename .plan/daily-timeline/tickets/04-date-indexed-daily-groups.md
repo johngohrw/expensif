@@ -1,6 +1,7 @@
 ---
 type: grilling
 blocked_by: [02, 03]
+undermined_by: [06]
 ---
 
 # Re-shape DailyGroups around dates, not expenses
@@ -36,6 +37,13 @@ Resolve, applying `codebase-design` (this is a module-depth question):
   `2006-01-02` string. Where is the window's end computed, and in whose zone?
 
 ## Answer
+
+> **Undermined by [ticket 06](./06-day-card-chrome-drift.md).** The *rationale* below for
+> "`Expenses` is never nil" — that it marshals to `"expenses": []` and ticket 07's island
+> `.map`s over it — is void: there is no JSON DTO, the endpoint serves an HTML fragment,
+> and `{{range}}` iterates nil happily. The invariant itself still stands, on the new
+> rationale recorded in [ticket 10](./10-test-strategy.md), and is asserted there.
+> Everything else in this answer is unaffected.
 
 `DailyGroups(ctx, limit)` is replaced by **two service calls**, both returning
 `[]domain.DailyGroup` sorted newest-first:

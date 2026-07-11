@@ -99,7 +99,20 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   and `UpcomingGroups(ctx, after)` (ungapped). The day-walk lives in the **service**;
   `HandleCalendar` keeps its own. No new fields on `DailyGroup`, and `Expenses` is never
   nil. The service is timezone-free — bare date strings in, UTC walk inside — so no
-  window edge straddles a DST transition.
+  window edge straddles a DST transition. *Undermined by 06: the never-nil invariant's
+  rationale was JSON marshalling, and there is no JSON. The invariant stands on a new
+  footing — see 10.*
+- [Test strategy for the date-indexed timeline](./tickets/10-test-strategy.md) — two seams:
+  the **service** for all logic (gap-fill cases, the today/upcoming partition asserted from
+  both sides in one test, never-nil asserted once), and the **fragment** through the real
+  renderer for the island's contract only — `data-next-*` and `data-state`, never chrome.
+  `start > end` is `ErrInvalidRange` → **400**, not an empty slice, so a bad cursor cannot
+  masquerade as a spent timeline. `HandleDaily` gains an injectable clock so "anchor at
+  today" is testable at a UTC-day boundary; ticket 04's DST claim is not tested (it is
+  `time.Parse`'s behaviour). First test — `TestDailyGroupsInRange_GapFillsEmptyDays` —
+  lands **red, before** the implementation. The 2026-06-02 testing strategy's renderer
+  "blocker" does not exist (`server_test.go:45` already renders in-package), and its
+  never-assert-on-HTML rule is narrowed, not broken.
 
 ## Not yet specified
 
