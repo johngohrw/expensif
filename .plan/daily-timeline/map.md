@@ -148,6 +148,18 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   future/past boundary, so 12 decides how to distinguish today, not whether. Approved markup:
   [`assets/upcoming-continuation.html.approved`](./assets/upcoming-continuation.html.approved).
 
+- [Today's row](./tickets/12-todays-row.md) — a solid **gray-900 dot in the date gutter**, beside
+  a date that stays: every other row is identified by its date, so the row you most want it on
+  is not the one to strip it from. Gray-900 deliberately, never blue — 14 spends blue on the
+  future day sitting directly above. Renaming the gutter to "Today" (loses the date, breaks
+  `tabular-nums`) and thickening the rails (reads as a seam in 08's unbroken lines) both died on
+  the prototype. **Today's empty row does not recede**: "no expenses *yet*" in `text-gray-500`
+  with a dark `+`, because 01's muting is for days that are done with and today is the row the
+  user came to fill. The mark is a property of the **day**, so the shared partial just compares
+  `{{if eq .Date $.Today}}` — it shows on `?date=<today>` too, nothing is threaded, and the two
+  views cannot drift. **Ticket 04 predicted this mechanism exactly**; no `IsToday` field. Approved
+  markup: [`assets/todays-row.html.approved`](./assets/todays-row.html.approved).
+
 ## Not yet specified
 
 <!-- Empty. Every patch has graduated into a ticket; the fog is clear to the destination. -->

@@ -1,8 +1,7 @@
 ---
 type: prototype
 blocked_by: [05, 08]
-claimed_by: claude-code-session-2026-07-13
-claimed_at: 2026-07-13T02:10:00Z
+assets: [../assets/todays-row.html.approved]
 ---
 
 # Today's row
@@ -60,3 +59,70 @@ Resolve, one at a time:
 - **What carries it.** Page data (`$.Today`, compared in the template) versus a field on
   `DailyGroup`. Ticket 04 argued for the former; the second consumer above is the fact
   that could overturn it.
+
+## Answer
+
+**A solid gray-900 dot in the date gutter, beside a date that stays.** Approved markup:
+[`assets/todays-row.html.approved`](../assets/todays-row.html.approved).
+
+Three marks were built on the real page — with [ticket 14](./14-upcoming-section-chrome.md)'s
+continuation above it, so today sat exactly where it will sit: directly beneath blue-tinted
+future days — and then thrown away.
+
+- **A** — "Today" *replacing* the date. **Rejected**: every other row on the page is
+  identified by its date, and this throws it away on the one row you are most likely to
+  want it for. It also breaks the gutter's `tabular-nums` alignment on that row.
+- **B** — the date stays, a dot marks it. **Wins.** Nothing structural changes.
+- **C** — the two rails thicken to 2px and darken for today's height. **Rejected**: it
+  darkens the two lines [ticket 08](./08-day-entry-ledger-redesign.md) spent real effort
+  making uniform and unbroken, and a heavier segment reads as a seam.
+
+The dot is **gray-900, never blue** — deliberate. Ticket 14 spends `text-blue-500` on
+future dates and today's row sits directly below the nearest one; the two marks must not
+read as the same family.
+
+### Today's empty row does not recede
+
+Today-with-nothing-on-it is the most common state of the most important row — the row the
+user opened the app to fill. [Ticket 01](./01-muted-empty-day-design.md)'s muted italic
+grey exists to push days that are **done with** into the background. Today is not done
+with.
+
+Same 28px row, same structure, same whole-row add target. Only the ink changes:
+
+|  | other empty day | today, empty |
+|---|---|---|
+| copy | "no expenses" | "no expenses **yet**" |
+| copy class | `text-gray-300 italic` | `text-gray-500` |
+| the `+` | `text-gray-400` | `text-gray-900` |
+
+Rejected: a full call-to-action ("Add today's first expense", button-weight `+`). It stops
+being a ledger row and starts being a banner, and it would shout on every page load where
+the user simply has not spent anything yet.
+
+### The mark is a property of the DAY — and ticket 04 called this exactly right
+
+**The dot appears wherever the day does, `?date=<today>` included.** It means "this day is
+today", not "this is the timeline's boundary". Drawing the boundary is what it happens to
+*do* on the timeline; it is not what it *is*.
+
+So nothing is threaded and nothing can drift. The shared day partial compares page data
+itself:
+
+```
+{{if eq .Date $.Today}}   → the dot
+```
+
+`basePageData` already puts `Today` in `PageData` on **every** page
+(`handlers_html.go:71`), so both consumers — the timeline and [ticket 05](./05-converge-handledaily-branches.md)'s
+`?date=` filter view — get it for free, and the two views **cannot** disagree.
+
+[Ticket 04](./04-date-indexed-daily-groups.md) predicted precisely this when it deferred
+`IsToday`: "the handler already computes today, so when that patch graduates it can pass
+`Today` in page data and the template compares `{{if eq .Date $.Today}}`." That prediction
+**holds**, and its refusal of an `IsToday` field on `DailyGroup` stands — the fact still has
+exactly one home.
+
+Rejected: making the dot timeline-only. It would have made the marker a property of the
+*page*, forcing a `showTodayMark` parameter through the shared partial from two handlers —
+strictly more plumbing, and it would let the two views drift apart.

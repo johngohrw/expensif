@@ -1,0 +1,91 @@
+{{/*
+  APPROVED — ticket 12, variant B: a dot in the date gutter.
+
+  Today keeps its date (every other row is identified by its date; the one row you are
+  most likely to reference should not be the one that loses it). A solid gray-900 dot
+  sits beside it. Nothing structural changes: the rails, the 28px rhythm, the five
+  columns are all untouched.
+
+  Deliberately gray-900, never blue — ticket 14 spends text-blue-500 on future dates,
+  and today's row sits DIRECTLY BELOW the nearest future day. The two marks must not
+  read as the same family.
+
+  Chosen over:
+    A — "Today" replacing the date. Costs today its date and breaks the gutter's
+        tabular-nums alignment on that row.
+    C — thickening the two rails for today's height. Darkens the lines ticket 08 spent
+        real effort making uniform and unbroken; a heavier segment reads as a seam.
+
+  ---- WHY THIS ROW IS MARKED AT ALL ----
+
+  Ticket 14 REQUIRES it. There is no Upcoming section — the ledger runs continuously
+  from the future into the past — so today's row is the ONLY boundary between "hasn't
+  happened yet" and "already spent".
+
+  ---- TODAY WHEN EMPTY (the common case) ----
+
+  Today's empty row does NOT recede. Ticket 01's muted italic grey exists to push days
+  that are DONE WITH into the background; today is not done with. It is the row the
+  user opened the app to fill.
+
+  Same 28px row, same structure, same whole-row add target — only the ink weight
+  changes:
+
+                     other empty day          today, empty
+    copy             "no expenses"            "no expenses yet"
+    copy class       text-gray-300 italic     text-gray-500
+    the +            text-gray-400            text-gray-900
+
+  ---- WHAT CARRIES IT ----
+
+  The mark is a property of the DAY, not of the page: it means "this day is today", not
+  "this is the timeline's boundary". Drawing the boundary is what it happens to DO on
+  the timeline; it is not what it IS.
+
+  So the shared day partial compares page data itself — nothing is threaded, and the
+  two consumers cannot drift:
+
+      {{if eq .Date $.Today}}   → the dot
+
+  basePageData already puts Today in PageData on EVERY page (handlers_html.go:71), so
+  both the timeline and ticket 05's ?date= filter view get it for free. The dot appears
+  wherever the day appears, ?date=<today> included.
+
+  There is still NO IsToday field on domain.DailyGroup — ticket 04 refused one and that
+  refusal stands. Ticket 04 predicted this exact mechanism when it deferred the
+  question; the prediction held.
+
+  In the markup below, `.isToday` is shorthand for that comparison — it is NOT a
+  parameter the caller supplies.
+
+  See .plan/daily-timeline/tickets/12-todays-row.md
+*/}}
+
+{{/* ---- The date gutter, for a populated day ---- */}}
+<div class="w-28 shrink-0 pt-2 pb-2">
+  {{if .isToday}}
+  <div class="py-1.5 flex items-center gap-1.5 text-xs tabular-nums font-semibold text-gray-900 whitespace-nowrap leading-4">
+    <span class="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0"></span>
+    {{shortDate .date .tz}}
+  </div>
+  {{else}}
+  <div class="py-1.5 text-xs tabular-nums {{if .future}}text-blue-500{{else if .populated}}font-semibold text-gray-900{{else}}text-gray-400{{end}} whitespace-nowrap leading-4">
+    {{shortDate .date .tz}}
+  </div>
+  {{end}}
+</div>
+
+{{/* ---- The expenses column of an EMPTY day. Today's does not recede. ---- */}}
+<div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+  <a
+    href="/expenses/new?date={{.date}}"
+    aria-label="Add expense on {{.label}}"
+    class="group flex items-center px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors"
+  >
+    <span class="text-xs {{if .isToday}}text-gray-500{{else}}text-gray-300 italic{{end}} leading-4 group-hover:text-blue-600"
+      >no expenses{{if .isToday}} yet{{end}}</span
+    >
+    <span class="flex-1"></span>
+    <span class="text-lg leading-4 {{if .isToday}}text-gray-900{{else}}text-gray-400{{end}} group-hover:text-blue-600">+</span>
+  </a>
+</div>
