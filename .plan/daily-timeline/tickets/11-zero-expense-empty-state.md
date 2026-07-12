@@ -1,6 +1,8 @@
 ---
 type: grilling
 blocked_by: [01, 08]
+claimed_by: claude-code-session-2026-07-12
+claimed_at: 2026-07-11T18:40:00Z
 ---
 
 # The zero-expense-ever empty state
