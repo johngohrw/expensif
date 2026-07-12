@@ -1,8 +1,7 @@
 ---
 type: prototype
 blocked_by: [03, 08]
-claimed_by: claude-code-session-2026-07-12
-claimed_at: 2026-07-11T19:05:00Z
+assets: [../assets/upcoming-continuation.html.approved]
 ---
 
 # The Upcoming section's chrome
@@ -48,3 +47,81 @@ Resolve, one at a time:
   them (one continuous rail through the section boundary into the timeline), or is it a
   separate rail system? This is the decision that makes Upcoming feel like part of the
   ledger or a box sitting on top of it.
+
+## Answer
+
+**There is no Upcoming section.** The ledger simply continues past today into the future,
+ungapped. No heading, no divider, no panel, no card, no tinted background. Approved markup:
+[`assets/upcoming-continuation.html.approved`](../assets/upcoming-continuation.html.approved).
+
+Three variants were built on the real daily view behind `?variant=`, against ticket 08's
+approved ledger and real data, then thrown away:
+
+- **A** — Upcoming as a labelled *region* of one ledger: a gutter label and a
+  `border-gray-200` boundary. **Rejected**, and the prototype is what killed it: that
+  boundary is the same weight as the ledger's month divider, so an upcoming expense in
+  next month (seeded: August rent) puts two grey lines within a couple of rows of each
+  other. The collision the ticket predicted is real and visible.
+- **B** — Upcoming as a detached tinted panel with its own rails, heading, day count and
+  total. **Rejected**: it makes the future a separate *object*, and the page is one ledger.
+- **C** — no section at all. **Wins.**
+
+### What marks a future day — exactly two things
+
+1. **The date is tinted** (`text-blue-500`) rather than `font-semibold text-gray-900`.
+2. **Today's row is distinguished** — and that is the *only* thing separating "hasn't
+   happened yet" from "already spent".
+
+### This constrains ticket 12, and that is now written into it
+
+With no section chrome, today's row **is** the boundary. So
+[Today's row](./12-todays-row.md) no longer decides *whether* today is visually
+distinguished — this ticket requires it. Ticket 12's question narrows to **how**. Its body
+has been updated to say so; the alternative (letting the future tint carry the boundary
+alone) was put to the user and rejected, because on a page with no future expenses — the
+common case — the tint never appears, so the boundary would exist only on the pages that
+don't need it.
+
+### The + row stays on future days
+
+**Overridden from the prototype**, which omitted it. A future day is an ordinary day, and
+C's whole premise is that the ledger just continues — so the add affordance continues too.
+
+The argument *against* (raised and rejected): Upcoming is ungapped, so a `+` appears on
+August 1 only because rent already sits there, while August 2 cannot be added to at all —
+an affordance that exists as an accident of what is already logged. The user took the
+consistency of the row over that objection. Adding to an arbitrary future day remains the
+calendar's and `?date=`'s job; both already reach every day in ±1 year.
+
+### The overflow row — Upcoming is capped at 3 days
+
+Upcoming sits **above** today, so a long one pushes the page's anchor off screen. This was
+not hypothetical: with a seeded year of rent (eight future payments to March 2027), the
+uncapped variant put **fourteen expense rows before today** and today below the fold.
+
+So: render at most the **three upcoming days nearest today**. The rest collapse into a
+single 28px ledger row — `later │ 7 more upcoming days → │ $9,800` — placed *above* the
+days it summarises, because further-future is further up. It links to the calendar.
+
+It is a **link, not a disclosure.** Expanding in place needs JavaScript, and the daily view
+has none but the scroll island ([ticket 06](./06-day-card-chrome-drift.md)).
+
+Rejected: a **horizon cap** (only show the next 14 days). It looks tidiest, but future
+expenses would vanish from the daily view with nothing hinting they exist — that changes
+[ticket 03](./03-future-dated-expenses.md)'s *content* decision, not its chrome, and would
+have marked 03 undermined. Nothing is hidden without a trace; the overflow row states the
+count and the total.
+
+### The empty case falls out for free
+
+No future expenses — the common case — means no future days render, no overflow row
+renders, and **nothing at all sits above today**. There is no chrome to hide because there
+is no chrome. This is the strongest argument for C: A and B both had to answer "what does
+the heading do when it's empty", and C never has to ask.
+
+### Rails and dividers
+
+Unchanged from ticket 08, because future days *are* ledger days: the two rails run
+unbroken from the furthest-future day to the oldest day in the window, day dividers stay
+`border-gray-50`, and the `border-gray-200` month divider keeps its meaning — it is now the
+only heavy horizontal line on the page.

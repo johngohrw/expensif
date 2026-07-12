@@ -136,6 +136,18 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   start, so 07's terminal fires on the first window and the island never fetches — correct,
   since nothing older exists.
 
+- [The Upcoming section's chrome](./tickets/14-upcoming-section-chrome.md) — **there is no
+  Upcoming section.** The ledger continues past today into the future, ungapped: no heading,
+  no divider, no panel. A future day is an ordinary day — it keeps its `+` row — and is marked
+  only by a tinted date. Capped at the **3 days nearest today**; the rest collapse into one
+  28px ledger row (`later │ 7 more upcoming days → │ $9,800`) linking to the calendar, because
+  Upcoming sits *above* today and a seeded year of rent put fourteen rows before it. A labelled
+  region (A) died on the prototype — its boundary is the same weight as the month divider, and
+  they collide when an upcoming expense is in next month. The empty case needs no answer: with
+  no chrome, there is no chrome to hide. **Constrains 12**: today's row is now the *only*
+  future/past boundary, so 12 decides how to distinguish today, not whether. Approved markup:
+  [`assets/upcoming-continuation.html.approved`](./assets/upcoming-continuation.html.approved).
+
 ## Not yet specified
 
 <!-- Empty. Every patch has graduated into a ticket; the fog is clear to the destination. -->

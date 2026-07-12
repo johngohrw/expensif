@@ -1,0 +1,87 @@
+{{/*
+  APPROVED — ticket 14, variant C1: Upcoming is NOT a section.
+
+  The ledger simply continues past today into the future, ungapped. There is no
+  heading, no divider, no panel, no card. Future days are drawn with ticket 08's
+  day-entry partial, unchanged, including the + row.
+
+  Chosen over:
+    A — Upcoming as a labelled region inside one ledger (gutter label + a
+        border-gray-200 boundary). Rejected: that boundary is the same weight as the
+        ledger's month divider, so an upcoming expense in next month puts two grey
+        lines within a couple of rows of each other.
+    B — Upcoming as a detached, tinted panel with its own heading, count and total.
+        Rejected: it makes the future a separate object; the page is one ledger.
+
+  Two marks distinguish a future day, and ONLY these two:
+
+    1. The date is tinted (text-blue-500) instead of font-semibold text-gray-900.
+    2. Today's row is visually distinguished — TICKET 12 OWNS THIS, and ticket 14
+       REQUIRES it. With no section chrome, today's row is the only thing separating
+       "hasn't happened" from "already spent". Ticket 12 no longer decides *whether*
+       to distinguish today, only *how*.
+
+  The + row stays on future days. A future day is an ordinary day.
+
+  ---- THE OVERFLOW ROW (C1) ----
+
+  Upcoming sits ABOVE today, so a long one pushes today off the screen. Verified on a
+  seeded year of rent: with no cap, fourteen expense rows precede today and the page's
+  anchor is below the fold.
+
+  So: render at most the THREE upcoming days nearest today. Any others collapse into a
+  single 28px ledger row, placed ABOVE the days it summarises (further-future is
+  further up), carrying the count and their total, linking to the calendar.
+
+  It is a LINK, not a disclosure. Expanding in place would need JavaScript, and the
+  daily view has none but the scroll island (ticket 06).
+
+  The empty case — no future expenses, the common case — falls out for free: no future
+  days render, no overflow row renders, and nothing at all sits above today. There is
+  no chrome to hide because there is no chrome.
+
+  See .plan/daily-timeline/tickets/14-upcoming-section-chrome.md
+*/}}
+
+{{/* Future days: ticket 08's day partial, date tinted, + row intact.
+     $upcoming is UpcomingGroups(ctx, today) — ungapped, newest-first, so the
+     furthest-future day is at the top and the last one flows into today below. */}}
+{{range $upcoming}}
+<div class="border-t border-gray-50">
+  {{template "day-entry" dict "g" . "sym" $sym "tz" $tz "future" true}}
+</div>
+{{end}}
+
+{{/* The overflow row. Rendered only when upcoming days were capped. */}}
+{{if .HiddenUpcoming}}
+<div class="border-t border-gray-50">
+  <div class="flex px-3 sm:px-4">
+    <div class="w-28 shrink-0 pt-2 pb-2">
+      <div class="py-1.5 text-xs tabular-nums text-gray-300 whitespace-nowrap leading-4">
+        later
+      </div>
+    </div>
+    {{template "rail"}}
+    <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+      <a
+        href="/calendar"
+        class="group flex items-center px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors"
+      >
+        <span class="text-xs text-blue-500 leading-4 group-hover:text-blue-600"
+          >{{.HiddenUpcoming}} more upcoming day{{if ne .HiddenUpcoming 1}}s{{end}}</span
+        >
+        <span class="flex-1"></span>
+        <span class="text-xs text-gray-400 leading-4 group-hover:text-blue-600">→</span>
+      </a>
+    </div>
+    {{template "rail"}}
+    <div class="w-24 shrink-0 pt-2 pb-2 pl-3">
+      <div class="py-1.5 text-right tabular-nums text-xs text-gray-400 leading-4 whitespace-nowrap">
+        {{$sym}}{{printf "%.2f" .HiddenUpcomingTotal}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{/* ...then the timeline: the gap-filled 30-day window, newest-first, unchanged. */}}
