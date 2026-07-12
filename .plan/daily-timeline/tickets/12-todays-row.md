@@ -1,6 +1,8 @@
 ---
 type: prototype
 blocked_by: [05, 08]
+claimed_by: claude-code-session-2026-07-13
+claimed_at: 2026-07-13T02:10:00Z
 ---
 
 # Today's row
