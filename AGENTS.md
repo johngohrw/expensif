@@ -45,7 +45,7 @@ Read the most recent handoffs to catch up on project state. The `session-*.md` f
 - `CONTEXT.md` (repo root) — domain glossary / ubiquitous language.
 - `docs/adr/` — architecture decision records.
 
-Both are created lazily by the `domain-modeling` skill. Neither exists yet. Skills that read them proceed silently when absent.
+Both exist and are maintained by the `domain-modeling` skill. Use `CONTEXT.md`'s vocabulary in specs and code; check `docs/adr/` before changing architecture it records.
 
 ## Skills
 
