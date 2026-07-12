@@ -125,6 +125,17 @@ backwards a fixed window, paginate older windows on demand. No future days.**
   surface** — `list.html` keeps its `data-table`, and nothing may drop it without replacing the
   affordance. Approved markup: [`assets/edit-delete-danger-zone.html.approved`](./assets/edit-delete-danger-zone.html.approved).
 
+- [The zero-expense-ever empty state](./tickets/11-zero-expense-empty-state.md) — the page-swap
+  survives, re-conditioned on **`GetEarliestExpenseDate() == ""`** ("ever", not "in this
+  window"), which is free: the handler already calls it for the scroll terminal. `{{if
+  .DailyGroups}}` is dead — always true after 04 — and becomes a `NoExpensesEver` flag, so the
+  branch lives in the **template** and `HandleDaily` stays at two branches, honouring 07's
+  refusal to grow a third. Dormant accounts (data, but all older than the window) get the real
+  timeline and scroll to it. The empty block itself is unchanged. Also settles a scroll-terminal
+  edge for free: an account whose only expense is future-dated has `earliest` *after* the window
+  start, so 07's terminal fires on the first window and the island never fetches — correct,
+  since nothing older exists.
+
 ## Not yet specified
 
 <!-- Empty. Every patch has graduated into a ticket; the fog is clear to the destination. -->
