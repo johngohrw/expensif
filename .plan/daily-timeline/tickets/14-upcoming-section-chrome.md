@@ -1,6 +1,8 @@
 ---
 type: prototype
 blocked_by: [03, 08]
+claimed_by: claude-code-session-2026-07-12
+claimed_at: 2026-07-11T19:05:00Z
 ---
 
 # The Upcoming section's chrome
