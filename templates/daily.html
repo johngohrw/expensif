@@ -5,7 +5,7 @@
   {{template "button" dict "variant" "neutral" "size" "sm" "href" .BackHref "text" (print "← " .BackLabel)}}
 </div>
 {{end}}
-{{template "mobile-pad-end"}} {{if .DailyGroups}}
+{{template "mobile-pad-end"}} {{if not .NoExpensesEver}}
 <div class="space-y-6">
   {{range .DailyGroups}}
   <div

@@ -35,6 +35,12 @@ templates at startup, so restart after template edits. The user's dev database
 
 <!-- one line per resolved ticket: gist + link -->
 
+- [The date-indexed service, wired end to end](./tickets/01-date-indexed-service.md) —
+  `DailyGroupsInRange` + `UpcomingGroups` shipped tests-first and wired into
+  `HandleDaily` with the clock seam and the `NoExpensesEver` flag; the old card
+  template renders the gap-filled window until the ledger lands. The handler's
+  400-mapping exists but is only reachable via `/daily/older` (ticket 03's test).
+
 ## Not yet specified
 
 <!-- Empty by construction: the planning map cleared all fog before this map was charted. -->

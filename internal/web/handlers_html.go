@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -40,20 +41,21 @@ func heatLevel(total float64, sortedSpendTotals []float64) int {
 type HTMLHandler struct {
 	svc      *service.Service
 	renderer *Renderer
+	now      func() time.Time // injectable so tests can pin "today"
 }
 
 func NewHTMLHandler(svc *service.Service, renderer *Renderer) *HTMLHandler {
-	return &HTMLHandler{svc: svc, renderer: renderer}
+	return &HTMLHandler{svc: svc, renderer: renderer, now: time.Now}
 }
 
-func nowInTZ(tz string) time.Time {
+func (h *HTMLHandler) nowInTZ(tz string) time.Time {
 	loc := time.Local
 	if tz != "" {
 		if l, err := time.LoadLocation(tz); err == nil {
 			loc = l
 		}
 	}
-	return time.Now().In(loc)
+	return h.now().In(loc)
 }
 
 func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData {
@@ -68,7 +70,7 @@ func (h *HTMLHandler) basePageData(ctx context.Context, active string) PageData 
 		Currency:       prefs.Currency,
 		UserID:         prefs.UserID,
 		Timezone:       prefs.Timezone,
-		Today:          nowInTZ(prefs.Timezone).Format("2006-01-02"),
+		Today:          h.nowInTZ(prefs.Timezone).Format("2006-01-02"),
 		Islands:        []string{"mobile-nav"},
 	}
 }
@@ -134,7 +136,7 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 			loc = l
 		}
 	}
-	today := nowInTZ(data.Timezone)
+	today := h.nowInTZ(data.Timezone)
 
 	// Start = earliest expense or 1 year before today, whichever is earlier
 	var start time.Time
@@ -234,13 +236,22 @@ func (h *HTMLHandler) HandleCalendar(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "calendar", data)
 }
 
+// httpDateRangeError maps the service's date-validation errors to 400,
+// matching the write path's precedent; anything else is a 500.
+func httpDateRangeError(w http.ResponseWriter, err error) {
+	if errors.Is(err, service.ErrInvalidDate) || errors.Is(err, service.ErrInvalidRange) {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Error(w, err.Error(), http.StatusInternalServerError)
+}
+
 func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := h.basePageData(ctx, "daily")
 
 	filterDate := r.URL.Query().Get("date")
 	var groups []domain.DailyGroup
-	var err error
 	if filterDate != "" {
 		data.FilterDate = filterDate
 		if r.URL.Query().Get("from") == "calendar" {
@@ -261,11 +272,29 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 		}
 		groups = []domain.DailyGroup{{Date: filterDate, Expenses: expenses, Total: dayTotal}}
 	} else {
-		groups, err = h.svc.DailyGroups(ctx, 100)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		// The timeline: a rolling 30-day window anchored at today, with
+		// future-dated expenses (ungapped) above it. The timezone names
+		// today once, here; the service walk is timezone-free.
+		endT, parseErr := time.Parse("2006-01-02", data.Today)
+		if parseErr != nil {
+			http.Error(w, parseErr.Error(), http.StatusInternalServerError)
 			return
 		}
+		start := endT.AddDate(0, 0, -29).Format("2006-01-02")
+		window, rangeErr := h.svc.DailyGroupsInRange(ctx, start, data.Today)
+		if rangeErr != nil {
+			httpDateRangeError(w, rangeErr)
+			return
+		}
+		upcoming, upErr := h.svc.UpcomingGroups(ctx, data.Today)
+		if upErr != nil {
+			httpDateRangeError(w, upErr)
+			return
+		}
+		groups = append(upcoming, window...)
+
+		earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
+		data.NoExpensesEver = earliest == ""
 	}
 
 	// Convert daily totals and per-row amounts

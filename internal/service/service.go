@@ -18,6 +18,7 @@ var (
 	ErrMissingCategory    = errors.New("Category is required")
 	ErrMissingDescription = errors.New("Description is required")
 	ErrInvalidDate        = errors.New("Date must be a valid YYYY-MM-DD")
+	ErrInvalidRange       = errors.New("Start date must not be after end date")
 	ErrNoRates            = errors.New("No exchange rates available")
 )
 
@@ -143,31 +144,77 @@ func (s *Service) GetEarliestExpenseDate(ctx context.Context) (string, error) {
 	return s.expenses.GetEarliestExpenseDate(ctx)
 }
 
-func (s *Service) DailyGroups(ctx context.Context, limit int) ([]domain.DailyGroup, error) {
-	expenses, err := s.ListExpenses(ctx, limit)
+// DailyGroupsInRange returns one group per day in [start, end], newest
+// first. Every day appears, empty days included; an empty day's Expenses
+// is an empty slice, never nil. Dates are bare YYYY-MM-DD strings — the
+// walk runs on UTC-parsed values, so the caller's timezone is never
+// consulted here.
+func (s *Service) DailyGroupsInRange(ctx context.Context, start, end string) ([]domain.DailyGroup, error) {
+	startT, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		return nil, ErrInvalidDate
+	}
+	endT, err := time.Parse("2006-01-02", end)
+	if err != nil {
+		return nil, ErrInvalidDate
+	}
+	if startT.After(endT) {
+		return nil, ErrInvalidRange
+	}
+	expenses, err := s.expenses.ListExpensesInRange(ctx, start, end)
 	if err != nil {
 		return nil, err
 	}
-	groups := make(map[string][]domain.Expense)
-	for _, e := range expenses {
-		groups[e.Date] = append(groups[e.Date], e)
-	}
-	var dailyGroups []domain.DailyGroup
-	for date, exps := range groups {
-		var dayTotal float64
-		for _, e := range exps {
-			dayTotal += e.Amount
+	byDate := groupByDate(expenses)
+	var groups []domain.DailyGroup
+	for d := endT; !d.Before(startT); d = d.AddDate(0, 0, -1) {
+		date := d.Format("2006-01-02")
+		exps := byDate[date]
+		if exps == nil {
+			exps = []domain.Expense{}
 		}
-		dailyGroups = append(dailyGroups, domain.DailyGroup{
-			Date:     date,
-			Expenses: exps,
-			Total:    dayTotal,
-		})
+		groups = append(groups, newDailyGroup(date, exps))
 	}
-	sort.Slice(dailyGroups, func(i, j int) bool {
-		return dailyGroups[i].Date > dailyGroups[j].Date
+	return groups, nil
+}
+
+// UpcomingGroups returns expenses dated strictly after `after`, grouped by
+// day, newest first. Not gap-filled: only days that carry an expense appear.
+func (s *Service) UpcomingGroups(ctx context.Context, after string) ([]domain.DailyGroup, error) {
+	afterT, err := time.Parse("2006-01-02", after)
+	if err != nil {
+		return nil, ErrInvalidDate
+	}
+	from := afterT.AddDate(0, 0, 1).Format("2006-01-02")
+	expenses, err := s.expenses.ListExpensesInRange(ctx, from, "9999-12-31")
+	if err != nil {
+		return nil, err
+	}
+	byDate := groupByDate(expenses)
+	var groups []domain.DailyGroup
+	for date, exps := range byDate {
+		groups = append(groups, newDailyGroup(date, exps))
+	}
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].Date > groups[j].Date
 	})
-	return dailyGroups, nil
+	return groups, nil
+}
+
+func groupByDate(expenses []domain.Expense) map[string][]domain.Expense {
+	byDate := make(map[string][]domain.Expense)
+	for _, e := range expenses {
+		byDate[e.Date] = append(byDate[e.Date], e)
+	}
+	return byDate
+}
+
+func newDailyGroup(date string, exps []domain.Expense) domain.DailyGroup {
+	var total float64
+	for _, e := range exps {
+		total += e.Amount
+	}
+	return domain.DailyGroup{Date: date, Expenses: exps, Total: total}
 }
 
 // --- Preferences ---

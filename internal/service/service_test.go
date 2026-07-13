@@ -309,9 +309,182 @@ func TestCreateExpense_ValidAndFutureDates(t *testing.T) {
 	}
 }
 
+// --- Date-indexed daily groups ---
+
+// rangeStub returns a stub whose ListExpensesInRange filters the given
+// expenses by bare-string date comparison, like the real SQL does.
+func rangeStub(expenses ...domain.Expense) *expenseRepoStub {
+	return &expenseRepoStub{listInRange: func(start, end string) ([]domain.Expense, error) {
+		var out []domain.Expense
+		for _, e := range expenses {
+			if e.Date >= start && e.Date <= end {
+				out = append(out, e)
+			}
+		}
+		return out, nil
+	}}
+}
+
+func TestDailyGroupsInRange_GapFillsEmptyDays(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub(
+		domain.Expense{ID: 1, Amount: 10, Category: "food", Description: "a", Date: "2026-06-01", Currency: "USD"},
+		domain.Expense{ID: 2, Amount: 7, Category: "food", Description: "b", Date: "2026-06-05", Currency: "USD"},
+		domain.Expense{ID: 3, Amount: 5, Category: "food", Description: "c", Date: "2026-06-05", Currency: "USD"},
+	)}, &mockRateClient{})
+
+	groups, err := svc.DailyGroupsInRange(context.Background(), "2026-06-01", "2026-06-05")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(groups) != 5 {
+		t.Fatalf("expected 5 groups (every day in range), got %d", len(groups))
+	}
+	wantDates := []string{"2026-06-05", "2026-06-04", "2026-06-03", "2026-06-02", "2026-06-01"}
+	for i, want := range wantDates {
+		if groups[i].Date != want {
+			t.Fatalf("group %d: expected date %s (newest first), got %s", i, want, groups[i].Date)
+		}
+	}
+	if len(groups[0].Expenses) != 2 || groups[0].Total != 12 {
+		t.Fatalf("expected 2 expenses totalling 12 on 2026-06-05, got %d totalling %v", len(groups[0].Expenses), groups[0].Total)
+	}
+	if len(groups[4].Expenses) != 1 || groups[4].Total != 10 {
+		t.Fatalf("expected 1 expense totalling 10 on 2026-06-01, got %d totalling %v", len(groups[4].Expenses), groups[4].Total)
+	}
+	for _, i := range []int{1, 2, 3} {
+		if len(groups[i].Expenses) != 0 {
+			t.Fatalf("expected %s to be an empty day, got %d expenses", groups[i].Date, len(groups[i].Expenses))
+		}
+	}
+}
+
+// TestDailyGroupsInRange_ExpensesNeverNil is the one home of the never-nil
+// invariant: a gap-filled empty day carries an empty slice, never nil.
+func TestDailyGroupsInRange_ExpensesNeverNil(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub()}, &mockRateClient{})
+
+	groups, err := svc.DailyGroupsInRange(context.Background(), "2026-06-01", "2026-06-03")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(groups) != 3 {
+		t.Fatalf("expected 3 groups for an empty window, got %d", len(groups))
+	}
+	for _, g := range groups {
+		if g.Expenses == nil {
+			t.Fatalf("Expenses is nil on %s; the invariant is an empty slice", g.Date)
+		}
+	}
+}
+
+func TestDailyGroupsInRange_SingleDay(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub(
+		domain.Expense{ID: 1, Amount: 3, Category: "food", Description: "a", Date: "2026-06-02", Currency: "USD"},
+	)}, &mockRateClient{})
+
+	groups, err := svc.DailyGroupsInRange(context.Background(), "2026-06-02", "2026-06-02")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(groups) != 1 || groups[0].Date != "2026-06-02" || len(groups[0].Expenses) != 1 {
+		t.Fatalf("expected one group for 2026-06-02 with one expense, got %+v", groups)
+	}
+}
+
+func TestDailyGroupsInRange_InvertedRangeIsError(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub()}, &mockRateClient{})
+
+	_, err := svc.DailyGroupsInRange(context.Background(), "2026-06-05", "2026-06-01")
+	if !errors.Is(err, ErrInvalidRange) {
+		t.Fatalf("expected ErrInvalidRange, got %v", err)
+	}
+}
+
+func TestDailyGroupsInRange_UnparseableEndpointIsError(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub()}, &mockRateClient{})
+
+	for _, r := range [][2]string{{"banana", "2026-06-05"}, {"2026-06-01", "banana"}} {
+		if _, err := svc.DailyGroupsInRange(context.Background(), r[0], r[1]); !errors.Is(err, ErrInvalidDate) {
+			t.Fatalf("range %v: expected ErrInvalidDate, got %v", r, err)
+		}
+	}
+}
+
+// TestTodayUpcomingPartition asserts the boundary from both sides in one
+// test: an expense dated exactly today belongs to the window and not to
+// Upcoming; tomorrow's is the reverse. The bug hunted is an expense landing
+// in both sections at once.
+func TestTodayUpcomingPartition(t *testing.T) {
+	const today = "2026-07-12"
+	svc := New(repository.Repos{Expenses: rangeStub(
+		domain.Expense{ID: 1, Amount: 5, Category: "food", Description: "today", Date: "2026-07-12", Currency: "USD"},
+		domain.Expense{ID: 2, Amount: 9, Category: "food", Description: "tomorrow", Date: "2026-07-13", Currency: "USD"},
+	)}, &mockRateClient{})
+	ctx := context.Background()
+
+	window, err := svc.DailyGroupsInRange(ctx, "2026-06-13", today)
+	if err != nil {
+		t.Fatalf("window: unexpected error: %v", err)
+	}
+	upcoming, err := svc.UpcomingGroups(ctx, today)
+	if err != nil {
+		t.Fatalf("upcoming: unexpected error: %v", err)
+	}
+
+	inWindow := map[int64]bool{}
+	for _, g := range window {
+		for _, e := range g.Expenses {
+			inWindow[e.ID] = true
+		}
+	}
+	inUpcoming := map[int64]bool{}
+	for _, g := range upcoming {
+		for _, e := range g.Expenses {
+			inUpcoming[e.ID] = true
+		}
+	}
+
+	if !inWindow[1] || inUpcoming[1] {
+		t.Fatalf("today's expense must be in the window and only the window (window=%v upcoming=%v)", inWindow[1], inUpcoming[1])
+	}
+	if inWindow[2] || !inUpcoming[2] {
+		t.Fatalf("tomorrow's expense must be in Upcoming and only Upcoming (window=%v upcoming=%v)", inWindow[2], inUpcoming[2])
+	}
+	if window[0].Date != today {
+		t.Fatalf("expected the window's newest group to be today (%s), got %s", today, window[0].Date)
+	}
+}
+
+func TestUpcomingGroups_UngappedAndDescending(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub(
+		domain.Expense{ID: 1, Amount: 5, Category: "rent", Description: "near", Date: "2026-07-15", Currency: "USD"},
+		domain.Expense{ID: 2, Amount: 9, Category: "rent", Description: "far", Date: "2026-07-22", Currency: "USD"},
+	)}, &mockRateClient{})
+
+	groups, err := svc.UpcomingGroups(context.Background(), "2026-07-12")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(groups) != 2 {
+		t.Fatalf("Upcoming is not gap-filled: expected exactly 2 groups, got %d", len(groups))
+	}
+	if groups[0].Date != "2026-07-22" || groups[1].Date != "2026-07-15" {
+		t.Fatalf("expected descending order (furthest future first), got %s then %s", groups[0].Date, groups[1].Date)
+	}
+}
+
+func TestUpcomingGroups_UnparseableAfterIsError(t *testing.T) {
+	svc := New(repository.Repos{Expenses: rangeStub()}, &mockRateClient{})
+
+	if _, err := svc.UpcomingGroups(context.Background(), "banana"); !errors.Is(err, ErrInvalidDate) {
+		t.Fatalf("expected ErrInvalidDate, got %v", err)
+	}
+}
+
 // expenseRepoStub is a minimal stub for expense repository tests.
 type expenseRepoStub struct {
-	create func(e domain.Expense) (int64, error)
+	create      func(e domain.Expense) (int64, error)
+	listInRange func(start, end string) ([]domain.Expense, error)
 }
 
 func (s *expenseRepoStub) CreateExpense(ctx context.Context, e domain.Expense) (int64, error) {
@@ -326,6 +499,9 @@ func (s *expenseRepoStub) ListExpenses(ctx context.Context, limit int) ([]domain
 }
 
 func (s *expenseRepoStub) ListExpensesInRange(ctx context.Context, start, end string) ([]domain.Expense, error) {
+	if s.listInRange != nil {
+		return s.listInRange(start, end)
+	}
 	return nil, nil
 }
 
