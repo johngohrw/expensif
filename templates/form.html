@@ -1,4 +1,7 @@
 {{define "form"}}
+{{/* Carried so a failed save's re-render still knows where the user came
+     from; the danger zone's delete redirect is what finally consumes it. */}}
+{{if .ReturnTo}}<input type="hidden" name="return" value="{{.ReturnTo}}" />{{end}}
 <div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
   <div class="space-y-4">
     <div>

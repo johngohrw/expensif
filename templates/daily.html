@@ -5,54 +5,8 @@
   {{template "button" dict "variant" "neutral" "size" "sm" "href" .BackHref "text" (print "← " .BackLabel)}}
 </div>
 {{end}}
-{{template "mobile-pad-end"}} {{if not .NoExpensesEver}}
-<div class="space-y-6">
-  {{range .DailyGroups}}
-  <div
-    class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-  >
-    <div
-      class="px-3 sm:px-4 py-2 border-b border-gray-100 flex items-center justify-between"
-    >
-      <div>
-        <h3 class="text-sm font-bold text-gray-900">{{formatDate .Date $.Timezone}}</h3>
-        <p class="text-xs text-gray-400">{{humanDate .Date $.Timezone}}</p>
-      </div>
-    </div>
-    {{if .Expenses}} {{- $meta := dict "currency" $.Currency "currencySymbol"
-    $.CurrencySymbol -}} {{- $actions := list (dict "type" "link" "href"
-    "/expenses/edit/{id}" "text" "Edit" "variant" "neutral") (dict "type" "form"
-    "action" "/expenses/delete/{id}" "text" "Delete" "variant" "danger"
-    "confirm" "Delete expense #{id}?") -}} {{- $columns := list (dict "key"
-    "amount" "title" "Amount" "type" "currency") (dict "key" "category" "title"
-    "Category" "type" "badge") (dict "key" "description" "title" "Description"
-    "type" "text") (dict "key" "paidByName" "title" "Paid By" "type" "text")
-    (dict "key" "actions" "title" "" "type" "actions" "actions" $actions) -}}
-    {{template "data-table" dict "columns" $columns "data" .Expenses "variant"
-    "ghost" "meta" $meta}}
-    <div
-      class="px-3 sm:px-4 py-3 border-t border-gray-100 flex items-center justify-between"
-    >
-      <div class="text-sm font-bold text-gray-900">
-        {{if .ConvertedTotal}} {{$.CurrencySymbol}}{{printf "%.2f"
-        .ConvertedTotal}} {{else}} {{$.CurrencySymbol}}{{printf "%.2f" .Total}}
-        {{end}}
-      </div>
-      {{template "button" dict "variant" "neutral" "size" "sm" "href" (print
-      "/expenses/new?date=" .Date) "text" "+ Add expense"}}
-    </div>
-    {{else}}
-    <div
-      class="px-3 sm:px-4 py-6 text-sm text-gray-400 italic flex items-center gap-2"
-    >
-      No expenses for this day. {{template "button" dict "variant" "primary"
-      "size" "sm" "href" (print "/expenses/new?date=" .Date) "text" "Add one"}}
-    </div>
-    {{end}}
-  </div>
-  {{end}}
-</div>
-{{else}}
+{{template "mobile-pad-end"}}
+{{if .NoExpensesEver}}
 <div class="text-center text-gray-400 py-16">
   {{template "mobile-pad-start"}}
   <div class="mb-3">No expenses yet.</div>
@@ -62,4 +16,73 @@
   </div>
   {{template "mobile-pad-end"}}
 </div>
-{{end}} {{end}}
+{{else}}{{if .FilterDate}}
+{{/* The single-day view: any date in ±1 year via the calendar. A populated
+     day draws through the same day-entry partial as the timeline, verbatim;
+     an empty one gets this fuller state — under ?date= the day is the entire
+     answer to the click, and the timeline's muted line would read as a broken
+     link. */}}
+{{$g := index .DailyGroups 0}}
+{{if $g.Expenses}}
+<div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  {{template "day-entry" dict "g" $g "sym" .CurrencySymbol "tz" .Timezone "today" .Today "return" .ReturnTo}}
+</div>
+{{else}}
+<div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="px-3 sm:px-4 py-2 border-b border-gray-100">
+    <h3 class="text-sm font-bold text-gray-900">{{formatDate .FilterDate .Timezone}}</h3>
+    <p class="text-xs text-gray-400">{{humanDate .FilterDate .Timezone}}</p>
+  </div>
+  <div class="px-3 sm:px-4 py-6 text-sm text-gray-400 italic flex items-center gap-2">
+    No expenses for this day. {{template "button" dict "variant" "primary"
+    "size" "sm" "href" (print "/expenses/new?date=" .FilterDate) "text" "Add one"}}
+  </div>
+</div>
+{{end}}
+{{else}}
+{{/* The timeline: one continuous ledger. Future days sit above today,
+     ungapped and marked only by a tinted date — there is no Upcoming section.
+     divide-y must not wrap this: its child selector outranks the month
+     divider's class, so borders sit on each day. */}}
+<div class="bg-white rounded-none sm:rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  {{if .HiddenUpcoming}}
+  {{/* The overflow row: upcoming days beyond the 3 nearest today, collapsed
+       so today is never pushed below the fold. A link to the calendar, not a
+       disclosure — expanding in place would need JS the page doesn't have.
+       It sits above the days it summarises: further-future is further up. */}}
+  <div class="border-t border-gray-50">
+    <div class="flex px-3 sm:px-4">
+      <div class="w-28 shrink-0 pt-2 pb-2">
+        <div class="py-1.5 text-xs tabular-nums text-gray-300 whitespace-nowrap leading-4">
+          later
+        </div>
+      </div>
+      {{template "rail"}}
+      <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+        <a
+          href="/calendar"
+          class="group flex items-center px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors"
+        >
+          <span class="text-xs text-blue-500 leading-4 group-hover:text-blue-600"
+            >{{.HiddenUpcoming}} more upcoming day{{if ne .HiddenUpcoming 1}}s{{end}}</span
+          >
+          <span class="flex-1"></span>
+          <span class="text-xs text-gray-400 leading-4 group-hover:text-blue-600">→</span>
+        </a>
+      </div>
+      {{template "rail"}}
+      <div class="w-24 shrink-0 pt-2 pb-2 pl-3">
+        <div class="py-1.5 text-right tabular-nums text-xs text-gray-400 leading-4 whitespace-nowrap">
+          {{.CurrencySymbol}}{{printf "%.2f" .HiddenUpcomingTotal}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  {{range $i, $g := .DailyGroups}}
+  <div class="border-t {{if monthBreak $.DailyGroups $i}}border-gray-200{{else}}border-gray-50{{end}}">
+    {{template "day-entry" dict "g" $g "sym" $.CurrencySymbol "tz" $.Timezone "today" $.Today "return" $.ReturnTo}}
+  </div>
+  {{end}}
+</div>
+{{end}}{{end}} {{end}}

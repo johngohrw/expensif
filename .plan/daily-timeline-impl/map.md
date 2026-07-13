@@ -41,6 +41,15 @@ templates at startup, so restart after template edits. The user's dev database
   template renders the gap-filled window until the ledger lands. The handler's
   400-mapping exists but is only reachable via `/daily/older` (ticket 03's test).
 
+- [The ledger](./tickets/02-the-ledger.md) — the whole visual layer shipped from the
+  three assets: one `day-entry` partial for both day kinds and both views (today and
+  the future derived from the day's date, never threaded), the overflow row placed
+  *above* the days it summarises (the asset's sketch order lost to the prose), month
+  breaks via a `monthBreak` helper, `data-day` as the partial's machine-readable
+  marker, and `data-table` gone — the daily view is JS-free. Ticket 04's failed-save
+  gap closed: `return` rides the edit form round-trip. Verified against the assets on
+  scratch DBs, including empty, dormant, and future-heavy accounts.
+
 - [The edit page's danger zone](./tickets/04-edit-page-danger-zone.md) — the approved
   markup shipped verbatim as a sibling form; `PageData.ReturnTo` carries `?return=`
   through `HandleEdit` to the hidden field, and `localPath` gates it at the redirect —

@@ -174,7 +174,7 @@ func TestConvertExpensesTotal_ConvertsAndSums(t *testing.T) {
 	if date != "2024-06-01" {
 		t.Fatalf("expected date 2024-06-01, got %s", date)
 	}
-	expected := 100.0 + (100.0/0.85) + 1.0
+	expected := 100.0 + (100.0 / 0.85) + 1.0
 	if total != expected {
 		t.Fatalf("expected total %f, got %f", expected, total)
 	}

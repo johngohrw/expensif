@@ -54,6 +54,42 @@ func TestHandleDaily_TodayNamedInPreferencesTimezone(t *testing.T) {
 	}
 }
 
+// TestHandleDaily_TimelineAndSingleDayShareDayEntryPartial is the spec's one
+// "same partial" assertion: the timeline and the ?date= view both draw a
+// populated day through the day-entry partial. data-day is the partial's
+// machine-readable marker — nothing else emits it — so its presence in both
+// responses is evidence of one implementation, without asserting on chrome.
+func TestHandleDaily_TimelineAndSingleDayShareDayEntryPartial(t *testing.T) {
+	repo := newMockRepo()
+	repo.prefs = domain.Preferences{Currency: "USD", Timezone: "UTC"}
+	repo.CreateExpense(t.Context(), domain.Expense{Amount: 5, Category: "food", Description: "x", Date: "2026-07-05", Currency: "USD"})
+
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	}, &mockRateClient{})
+
+	renderer, err := NewRenderer("../../templates", false, nil)
+	if err != nil {
+		t.Fatalf("renderer init failed: %v", err)
+	}
+	h := NewHTMLHandler(svc, renderer)
+	h.now = func() time.Time { return time.Date(2026, 7, 13, 12, 0, 0, 0, time.UTC) }
+
+	for _, target := range []string{"/", "/?date=2026-07-05"} {
+		rec := httptest.NewRecorder()
+		h.HandleDaily(rec, httptest.NewRequest("GET", target, nil))
+		if rec.Code != 200 {
+			t.Fatalf("%s: expected 200, got %d: %s", target, rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), `data-day="2026-07-05"`) {
+			t.Fatalf("%s: the day did not render through the day-entry partial", target)
+		}
+	}
+}
+
 // TestHandleDelete_ReturnPath covers the danger zone's return path. The value
 // arrives in a hidden form field, so it is attacker-supplied in principle: a
 // delete that honoured it blindly would be an open redirect off the back of a

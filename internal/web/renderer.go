@@ -15,32 +15,55 @@ import (
 )
 
 type PageData struct {
-	Active         string
-	Flash          string
-	FlashError     bool
-	Expenses       []domain.Expense
-	Expense        *domain.Expense
-	Total          float64
-	Categories     []domain.CategorySummary
-	Today          string
-	DailyGroups    []domain.DailyGroup
-	CalendarMonths []domain.CalendarMonth
-	CurrencySymbol string
-	Currency       string
-	ConvertedTotal float64
-	RateDate       string
-	ShowConverted  bool
-	UserID         int64
-	Users          []domain.User
-	User           *domain.User
-	PaidByID       int64
-	Timezone       string
-	FilterDate     string
-	BackHref       string
-	BackLabel      string
-	NoExpensesEver bool     // the account has never recorded an expense (ever, not "in this window")
-	ReturnTo       string   // where delete sends the user next; validated as a local path before the redirect
-	Islands        []string // Names of React islands to hydrate on this page
+	Active              string
+	Flash               string
+	FlashError          bool
+	Expenses            []domain.Expense
+	Expense             *domain.Expense
+	Total               float64
+	Categories          []domain.CategorySummary
+	Today               string
+	DailyGroups         []domain.DailyGroup
+	CalendarMonths      []domain.CalendarMonth
+	CurrencySymbol      string
+	Currency            string
+	ConvertedTotal      float64
+	RateDate            string
+	ShowConverted       bool
+	UserID              int64
+	Users               []domain.User
+	User                *domain.User
+	PaidByID            int64
+	Timezone            string
+	FilterDate          string
+	BackHref            string
+	BackLabel           string
+	NoExpensesEver      bool     // the account has never recorded an expense (ever, not "in this window")
+	ReturnTo            string   // where delete sends the user next; validated as a local path before the redirect
+	HiddenUpcoming      int      // upcoming days beyond the 3 nearest today, collapsed into the overflow row
+	HiddenUpcomingTotal float64  // the collapsed days' combined total, in the Preferred Currency
+	Islands             []string // Names of React islands to hydrate on this page
+}
+
+// yearMonth is the YYYY-MM prefix of a date string. Rows written before date
+// validation landed can carry garbage shorter than seven bytes, so slice
+// defensively rather than panic.
+func yearMonth(date string) string {
+	if len(date) < 7 {
+		return date
+	}
+	return date[:7]
+}
+
+// tzLocation resolves a Preferences timezone name, falling back to the
+// server's local zone when it is empty or unknown.
+func tzLocation(tz string) *time.Location {
+	if tz != "" {
+		if l, err := time.LoadLocation(tz); err == nil {
+			return l
+		}
+	}
+	return time.Local
 }
 
 type Renderer struct {
@@ -81,13 +104,7 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			if err != nil {
 				return dateStr
 			}
-			loc := time.Local
-			if tz != "" {
-				if l, err := time.LoadLocation(tz); err == nil {
-					loc = l
-				}
-			}
-			now := time.Now().In(loc)
+			now := time.Now().In(tzLocation(tz))
 			todayStr := now.Format("2006-01-02")
 			if dateStr == todayStr {
 				return "Today"
@@ -99,17 +116,28 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			return humanize.Time(t)
 		},
 		"formatDate": func(dateStr, tz string) string {
-			loc := time.Local
-			if tz != "" {
-				if l, err := time.LoadLocation(tz); err == nil {
-					loc = l
-				}
-			}
-			t, err := time.ParseInLocation("2006-01-02", dateStr, loc)
+			t, err := time.ParseInLocation("2006-01-02", dateStr, tzLocation(tz))
 			if err != nil {
 				return dateStr
 			}
 			return t.Format("Jan 2, Monday")
+		},
+		"shortDate": func(dateStr, tz string) string {
+			t, err := time.ParseInLocation("2006-01-02", dateStr, tzLocation(tz))
+			if err != nil {
+				return dateStr
+			}
+			return t.Format("Jan 2 · Mon")
+		},
+		// monthBreak reports whether the ledger day at i sits under a day in a
+		// different month, i.e. whether its top divider is a month break. A
+		// template cannot see the previous range item, so the comparison lives
+		// here, over the slice.
+		"monthBreak": func(groups []domain.DailyGroup, i int) bool {
+			if i <= 0 || i >= len(groups) {
+				return false
+			}
+			return yearMonth(groups[i-1].Date) != yearMonth(groups[i].Date)
 		},
 		"currencySymbol": domain.CurrencySymbol,
 		"formatAmount":   domain.FormatAmount,

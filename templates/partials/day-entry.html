@@ -1,0 +1,103 @@
+{{/*
+  The day-entry ledger partial — the one implementation of a day. Consumers:
+  the timeline, the single-day ?date= view, and the /daily/older fragment
+  (next ticket). Approved markup: .plan/daily-timeline/assets/.
+
+  Invoked with:
+    dict "g" <DailyGroup> "sym" <currency symbol> "tz" <timezone>
+         "today" <YYYY-MM-DD> "return" <the invoking page's URI>
+
+  Today and the future are derived here from the day's date, never threaded as
+  flags: the dot is a property of the day, so ?date=<today> shows it too.
+
+  Three alignment invariants, each the fix for a visible defect:
+    1. Rails are their own stretching columns, never border-l on a neighbour —
+       the expenses column is self-start, so a border there stops short. Days
+       carry no vertical padding between them; consecutive rails touch and read
+       as two unbroken lines.
+    2. Vertical padding lives on the row, never on the column, so date, first
+       expense, and total share a baseline.
+    3. Every row is 28px: 16px text with leading-4 pinned explicitly, plus
+       py-1.5 — mixed text sizes otherwise drift the rhythm.
+*/}}
+
+{{/* A rail. Stretches to the full height of the day. */}}
+{{- define "rail" -}}<div class="w-px shrink-0 bg-gray-200"></div>{{- end -}}
+
+{{- define "day-entry" -}}
+{{- $g := .g -}}
+{{- $sym := .sym -}}
+{{- $tz := .tz -}}
+{{- $return := .return -}}
+{{- $isToday := eq $g.Date .today -}}
+{{- $future := gt $g.Date .today -}}
+{{- $label := formatDate $g.Date $tz -}}
+<div class="flex px-3 sm:px-4" data-day="{{$g.Date}}">
+  <div class="w-28 shrink-0 pt-2 pb-2">
+    {{if $isToday}}
+    <div class="py-1.5 flex items-center gap-1.5 text-xs tabular-nums font-semibold text-gray-900 whitespace-nowrap leading-4">
+      <span class="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0"></span>
+      {{shortDate $g.Date $tz}}
+    </div>
+    {{else}}
+    <div class="py-1.5 text-xs tabular-nums {{if $future}}text-blue-500{{else if $g.Expenses}}font-semibold text-gray-900{{else}}text-gray-400{{end}} whitespace-nowrap leading-4">
+      {{shortDate $g.Date $tz}}
+    </div>
+    {{end}}
+  </div>
+  {{template "rail"}}
+  {{if $g.Expenses}}
+  <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+    {{range $g.Expenses}}
+    <a
+      href="/expenses/edit/{{.ID}}?return={{urlquery $return}}"
+      class="flex items-center gap-3 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors"
+    >
+      <span class="text-xs text-gray-800 truncate leading-4"
+        >{{if .Description}}{{.Description}}{{else}}<span class="text-gray-400 italic">no description</span>{{end}}</span
+      >
+      <span class="text-[10px] uppercase tracking-wide text-gray-400 whitespace-nowrap">{{.Category}}</span>
+      <span class="flex-1"></span>
+      <span class="tabular-nums text-xs text-gray-900 whitespace-nowrap leading-4"
+        >{{$sym}}{{if .ConvertedAmount}}{{printf "%.2f" .ConvertedAmount}}{{else}}{{printf "%.2f" .Amount}}{{end}}</span
+      >
+    </a>
+    {{end}}
+    {{/* The add affordance: its own row, justify-end so its glyph aligns with
+         the empty days' + down the page. */}}
+    <a
+      href="/expenses/new?date={{$g.Date}}"
+      aria-label="Add expense on {{$label}}"
+      class="flex items-center justify-end px-3 py-1.5 rounded-md text-lg leading-4 text-gray-400 hover:bg-blue-50 hover:text-blue-600 active:bg-blue-100 transition-colors"
+      >+</a
+    >
+  </div>
+  {{template "rail"}}
+  <div class="w-24 shrink-0 pt-2 pb-2 pl-3">
+    <div class="py-1.5 text-right tabular-nums text-sm font-bold text-gray-900 leading-4 whitespace-nowrap">
+      {{$sym}}{{if $g.ConvertedTotal}}{{printf "%.2f" $g.ConvertedTotal}}{{else}}{{printf "%.2f" $g.Total}}{{end}}
+    </div>
+  </div>
+  {{else}}
+  {{/* Empty day: one 28px row, the whole row the add target. Today's empty row
+       does not recede — days that are done with are background; today is the
+       row the user came to fill. */}}
+  <div class="flex-1 min-w-0 self-start pt-2 pb-2 pl-2 pr-2">
+    <a
+      href="/expenses/new?date={{$g.Date}}"
+      aria-label="Add expense on {{$label}}"
+      class="group flex items-center px-3 py-1.5 rounded-md hover:bg-blue-50 transition-colors"
+    >
+      <span class="text-xs {{if $isToday}}text-gray-500{{else}}text-gray-300 italic{{end}} leading-4 group-hover:text-blue-600"
+        >no expenses{{if $isToday}} yet{{end}}</span
+      >
+      <span class="flex-1"></span>
+      <span class="text-lg leading-4 {{if $isToday}}text-gray-900{{else}}text-gray-400{{end}} group-hover:text-blue-600">+</span>
+    </a>
+  </div>
+  {{template "rail"}}
+  {{/* Reserve the total column's width so the rails never shift between day kinds. */}}
+  <div class="w-24 shrink-0 pt-2 pb-2 pl-3"></div>
+  {{end}}
+</div>
+{{- end -}}

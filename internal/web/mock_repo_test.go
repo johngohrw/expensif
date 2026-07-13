@@ -16,13 +16,13 @@ import (
 
 // mockRepo is an in-memory implementation of repository.Repository for testing.
 type mockRepo struct {
-	mu        sync.RWMutex
-	expenses  []domain.Expense
-	nextID    int64
-	prefs     domain.Preferences
-	rates     map[string]map[string]float64 // base -> target -> rate
-	rateDates map[string]string             // base -> date
-	users     map[int64]string
+	mu         sync.RWMutex
+	expenses   []domain.Expense
+	nextID     int64
+	prefs      domain.Preferences
+	rates      map[string]map[string]float64 // base -> target -> rate
+	rateDates  map[string]string             // base -> date
+	users      map[int64]string
 	nextUserID int64
 }
 

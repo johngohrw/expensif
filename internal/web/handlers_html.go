@@ -253,7 +253,12 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	data := h.basePageData(ctx, "daily")
 
 	filterDate := r.URL.Query().Get("date")
+	// Every ledger row's edit link carries where it came from, so delete's
+	// danger zone can send the user back. Only the redirect that finally
+	// consumes it validates it.
+	data.ReturnTo = r.URL.RequestURI()
 	var groups []domain.DailyGroup
+	upcomingCount := 0
 	if filterDate != "" {
 		data.FilterDate = filterDate
 		if r.URL.Query().Get("from") == "calendar" {
@@ -293,6 +298,7 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 			httpDateRangeError(w, upErr)
 			return
 		}
+		upcomingCount = len(upcoming)
 		groups = append(upcoming, window...)
 
 		earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
@@ -315,8 +321,23 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Cap upcoming at the 3 days nearest today (the slice is newest-first, so
+	// those are its last elements); the rest collapse into the overflow row.
+	// After the conversion loop, so the row's total is in the page currency.
+	if upcomingCount > 3 {
+		hidden := groups[:upcomingCount-3]
+		data.HiddenUpcoming = len(hidden)
+		for _, g := range hidden {
+			if g.ConvertedTotal > 0 {
+				data.HiddenUpcomingTotal += g.ConvertedTotal
+			} else {
+				data.HiddenUpcomingTotal += g.Total
+			}
+		}
+		groups = groups[upcomingCount-3:]
+	}
+
 	data.DailyGroups = groups
-	data.Islands = append(data.Islands, "data-table")
 	h.render(w, "daily", data)
 }
 
@@ -431,6 +452,9 @@ func (h *HTMLHandler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Flash = err.Error()
 		data.FlashError = true
+		// The form posts the return path back, so a failed save's re-render
+		// keeps the danger zone's destination intact.
+		data.ReturnTo = r.FormValue("return")
 		users, _ := h.svc.ListUsers(ctx)
 		data.Users = users
 		data.Islands = append(data.Islands, "category-pills", "description-pills")

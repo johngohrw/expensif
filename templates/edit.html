@@ -4,7 +4,7 @@
 {{template "page-title" dict "title" (printf "Edit Expense #%d" .Expense.ID)}}
 {{template "mobile-pad-end"}}
 <form method="POST" action="/expenses/edit/{{.Expense.ID}}">
-  {{template "form" dict "Title" (printf "Edit Expense #%d" .Expense.ID) "SubmitLabel" "Save Changes" "Expense" .Expense "Today" .Today "Currency" .Currency "Users" .Users "PaidByID" .PaidByID}}
+  {{template "form" dict "Title" (printf "Edit Expense #%d" .Expense.ID) "SubmitLabel" "Save Changes" "Expense" .Expense "Today" .Today "Currency" .Currency "Users" .Users "PaidByID" .PaidByID "ReturnTo" .ReturnTo}}
 </form>
 
 <div class="mt-10 pt-6 border-t border-gray-200">
