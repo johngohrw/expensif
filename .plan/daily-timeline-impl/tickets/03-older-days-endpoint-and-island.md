@@ -1,6 +1,8 @@
 ---
 type: task
 blocked_by: [02]
+claimed_by: claude-code-session-b9f33780
+claimed_at: 2026-07-13T00:00:00Z
 ---
 
 # The older-days endpoint and the scroll island
