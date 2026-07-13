@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -47,11 +48,19 @@ type AssetHelper struct {
 // ScriptTag returns a <script> tag for the given island entry point.
 // In dev mode, it points to the Vite dev server. In production, it reads
 // the hashed filename from the manifest.
+//
+// An entry is the source file's base name. Dev serves that file straight from
+// Vite, so an entry that is not a React component — the daily view's scroll
+// island is plain TypeScript — names its own extension.
 func (a *AssetHelper) ScriptTag(entry string) template.HTML {
 	if a.Dev {
+		src := entry
+		if path.Ext(src) == "" {
+			src += ".tsx"
+		}
 		return template.HTML(fmt.Sprintf(
-			`<script type="module" src="http://%s/src/entries/%s.tsx"></script>`,
-			devHost(), entry,
+			`<script type="module" src="http://%s/src/entries/%s"></script>`,
+			devHost(), src,
 		))
 	}
 	for _, entryData := range a.Manifest {

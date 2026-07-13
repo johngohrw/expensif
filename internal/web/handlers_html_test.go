@@ -90,6 +90,129 @@ func TestHandleDaily_TimelineAndSingleDayShareDayEntryPartial(t *testing.T) {
 	}
 }
 
+// dailyFixture builds a handler over a real renderer with the clock frozen at
+// 2026-07-13, so the first window is [2026-06-14, 2026-07-13].
+func dailyFixture(t *testing.T, dates ...string) *HTMLHandler {
+	t.Helper()
+	repo := newMockRepo()
+	repo.prefs = domain.Preferences{Currency: "USD", Timezone: "UTC"}
+	for _, d := range dates {
+		repo.CreateExpense(t.Context(), domain.Expense{Amount: 5, Category: "food", Description: "x", Date: d, Currency: "USD"})
+	}
+
+	svc := service.New(repository.Repos{
+		Expenses:    repo,
+		Users:       repo,
+		Preferences: repo,
+		Rates:       repo,
+	}, &mockRateClient{})
+
+	renderer, err := NewRenderer("../../templates", false, nil)
+	if err != nil {
+		t.Fatalf("renderer init failed: %v", err)
+	}
+	h := NewHTMLHandler(svc, renderer)
+	h.now = func() time.Time { return time.Date(2026, 7, 13, 12, 0, 0, 0, time.UTC) }
+	return h
+}
+
+func getBody(t *testing.T, handler http.HandlerFunc, target string) string {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	handler(rec, httptest.NewRequest("GET", target, nil))
+	if rec.Code != 200 {
+		t.Fatalf("%s: expected 200, got %d: %s", target, rec.Code, rec.Body.String())
+	}
+	return rec.Body.String()
+}
+
+// TestHandleDailyOlder_CursorWalksOlderWindows follows the scroll one step: the
+// page issues the first cursor, and the fragment it names issues the next. The
+// island does no date arithmetic, so these two attributes are the entire
+// pagination contract — nothing else about the fragment is asserted.
+func TestHandleDailyOlder_CursorWalksOlderWindows(t *testing.T) {
+	// Earliest expense far older than two windows, so neither cursor clamps.
+	h := dailyFixture(t, "2026-01-10", "2026-07-05")
+
+	// First window is [2026-06-14, 2026-07-13], so the one older than it is
+	// the 30 days ending the day before it starts.
+	page := getBody(t, h.HandleDaily, "/")
+	if !strings.Contains(page, `data-next-start="2026-05-15"`) || !strings.Contains(page, `data-next-end="2026-06-13"`) {
+		t.Fatalf("page did not server-render the first cursor: %s", page)
+	}
+	if !strings.Contains(page, `data-state="idle"`) {
+		t.Fatal("foot is not armed: with older expenses to fetch, its state must be idle")
+	}
+
+	frag := getBody(t, h.HandleDailyOlder, "/daily/older?start=2026-05-15&end=2026-06-13")
+	if !strings.Contains(frag, `data-next-start="2026-04-15"`) || !strings.Contains(frag, `data-next-end="2026-05-14"`) {
+		t.Fatalf("fragment did not issue the next cursor: %s", frag)
+	}
+}
+
+// TestHandleDailyOlder_TerminalAtEarliestExpense asserts the scroll's stop condition,
+// which lives server-side: the final window is clamped to the earliest expense
+// and carries no cursor. A fragment that still offered one would scroll the
+// user into an infinite empty pre-history.
+func TestHandleDailyOlder_TerminalAtEarliestExpense(t *testing.T) {
+	// 2026-05-20 sits inside the window older than the first, so that window is
+	// clamped to start there and nothing older than it exists.
+	h := dailyFixture(t, "2026-05-20", "2026-07-05")
+
+	page := getBody(t, h.HandleDaily, "/")
+	if !strings.Contains(page, `data-next-start="2026-05-20"`) {
+		t.Fatalf("the final window was not clamped to the earliest expense: %s", page)
+	}
+
+	frag := getBody(t, h.HandleDailyOlder, "/daily/older?start=2026-05-20&end=2026-06-13")
+	if strings.Contains(frag, "data-next-") {
+		t.Fatalf("the fragment at the earliest expense still carries a cursor: %s", frag)
+	}
+}
+
+// TestHandleDaily_TerminalOnTheFirstWindowWhenNothingIsOlder covers the account
+// whose only expense is future-dated: its earliest date sits after the window
+// starts, so there is nothing older to fetch and the island must never fire.
+func TestHandleDaily_TerminalOnTheFirstWindowWhenNothingIsOlder(t *testing.T) {
+	h := dailyFixture(t, "2026-08-01")
+
+	page := getBody(t, h.HandleDaily, "/")
+	if strings.Contains(page, "data-next-") {
+		t.Fatalf("a cursor was issued with no expense older than the window: %s", page)
+	}
+	if !strings.Contains(page, `data-state="end"`) {
+		t.Fatal("the foot did not server-render its terminal state")
+	}
+}
+
+// TestHandleDailyOlder_BadRange: the cursor is server-issued, so any range that is
+// unparseable, inverted, or longer than a window is a hand-crafted request.
+// None may render — an inverted range would otherwise reach the island as an
+// empty fragment, indistinguishable from the terminal.
+func TestHandleDailyOlder_BadRange(t *testing.T) {
+	tests := []struct {
+		name  string
+		query string
+	}{
+		{"unparseable start", "start=banana&end=2026-06-13"},
+		{"unparseable end", "start=2026-05-15&end=banana"},
+		{"missing both", ""},
+		{"inverted range", "start=2026-06-13&end=2026-05-15"},
+		{"longer than a window", "start=2020-01-01&end=2026-06-13"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := dailyFixture(t, "2026-01-10")
+			rec := httptest.NewRecorder()
+			h.HandleDailyOlder(rec, httptest.NewRequest("GET", "/daily/older?"+tt.query, nil))
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+			}
+		})
+	}
+}
+
 // TestHandleDelete_ReturnPath covers the danger zone's return path. The value
 // arrives in a hidden form field, so it is attacker-supplied in principle: a
 // delete that honoured it blindly would be an open redirect off the back of a

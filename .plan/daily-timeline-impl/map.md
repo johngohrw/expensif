@@ -50,6 +50,15 @@ templates at startup, so restart after template edits. The user's dev database
   gap closed: `return` rides the edit form round-trip. Verified against the assets on
   scratch DBs, including empty, dormant, and future-heavy accounts.
 
+- [The older-days endpoint and the scroll island](./tickets/03-older-days-endpoint-and-island.md) —
+  the scroll's whole rulebook is one server-side function (`olderWindow`), so the island
+  (0.69 kB, no React) owns no stop condition and does no date maths; a new `day-rows`
+  partial gives page and fragment one implementation, `monthBreak` becoming a rule about a
+  *pair* of days so the seam divider is correct in an appended window. The foot's states
+  hide by plain CSS, not Tailwind's `data-` variants — **the Play CDN is JavaScript**, so
+  with JS off the foot had been printing all four states at once. An over-long range is a
+  400. Verified live in a browser: the walk, the terminal, Retry, and a JS-less first window.
+
 - [The edit page's danger zone](./tickets/04-edit-page-danger-zone.md) — the approved
   markup shipped verbatim as a sibling form; `PageData.ReturnTo` carries `?return=`
   through `HandleEdit` to the hidden field, and `localPath` gates it at the redirect —

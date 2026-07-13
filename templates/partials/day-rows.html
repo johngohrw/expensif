@@ -1,0 +1,32 @@
+{{/*
+  A run of ledger days, and the dividers between them. Consumers: the timeline
+  and the /daily/older fragment — the fragment is the same rows, so the ledger
+  keeps one implementation and there is no seam to keep in step.
+
+  Invoked with:
+    dict "groups" <[]DailyGroup, newest first> "prev" <the date drawn directly
+         above the first group, "" at the top of the page> "sym" <currency
+         symbol> "tz" <timezone> "today" <YYYY-MM-DD> "return" <invoking URI>
+
+  Month breaks draw heavier. A day's divider is a property of the pair — the
+  day and the day above it — so an appended window's top row is told what it
+  landed under ("prev"), and needs no other cross-window state: the timeline is
+  gap-filled and contiguous, so the day above a window's first row is always
+  the day after it.
+
+  divide-y must not be used here: its child selector outranks the month
+  divider's class, so the borders sit on each day.
+*/}}
+{{- define "day-rows" -}}
+{{- $sym := .sym -}}
+{{- $tz := .tz -}}
+{{- $today := .today -}}
+{{- $return := .return -}}
+{{- $prev := .prev -}}
+{{- range $g := .groups -}}
+<div class="border-t {{if monthBreak $prev $g.Date}}border-gray-200{{else}}border-gray-50{{end}}">
+  {{template "day-entry" dict "g" $g "sym" $sym "tz" $tz "today" $today "return" $return}}
+</div>
+{{- $prev = $g.Date -}}
+{{- end -}}
+{{- end -}}

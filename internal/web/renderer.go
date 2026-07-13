@@ -42,7 +42,10 @@ type PageData struct {
 	ReturnTo            string   // where delete sends the user next; validated as a local path before the redirect
 	HiddenUpcoming      int      // upcoming days beyond the 3 nearest today, collapsed into the overflow row
 	HiddenUpcomingTotal float64  // the collapsed days' combined total, in the Preferred Currency
-	Islands             []string // Names of React islands to hydrate on this page
+	NextStart           string   // the scroll cursor: the window older than this one. Empty at the earliest
+	NextEnd             string   // expense — that absence is the scroll's terminal, and the island reads no other stop condition
+	PrevDate            string   // fragments only: the day directly above the seam, so the top divider knows whether it is a month break
+	Islands             []string // Names of island entries to load on this page
 }
 
 // yearMonth is the YYYY-MM prefix of a date string. Rows written before date
@@ -68,6 +71,7 @@ func tzLocation(tz string) *time.Location {
 
 type Renderer struct {
 	templates map[string]*template.Template
+	fragments map[string]*template.Template
 }
 
 func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Renderer, error) {
@@ -129,15 +133,13 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 			}
 			return t.Format("Jan 2 · Mon")
 		},
-		// monthBreak reports whether the ledger day at i sits under a day in a
-		// different month, i.e. whether its top divider is a month break. A
-		// template cannot see the previous range item, so the comparison lives
-		// here, over the slice.
-		"monthBreak": func(groups []domain.DailyGroup, i int) bool {
-			if i <= 0 || i >= len(groups) {
-				return false
-			}
-			return yearMonth(groups[i-1].Date) != yearMonth(groups[i].Date)
+		// monthBreak reports whether the divider between two adjacent ledger
+		// days — prev drawn directly above cur — is a month boundary, and so
+		// draws heavier. prev is empty at the top of the page; at the top of an
+		// appended fragment it is the day above the seam, so one rule covers
+		// both within a window and across two.
+		"monthBreak": func(prev, cur string) bool {
+			return prev != "" && yearMonth(prev) != yearMonth(cur)
 		},
 		"currencySymbol": domain.CurrencySymbol,
 		"formatAmount":   domain.FormatAmount,
@@ -170,12 +172,21 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 		},
 	}
 
+	partialFiles, _ := filepath.Glob(filepath.Join(templatesDir, "partials", "*.html"))
+
 	parsePage := func(files ...string) *template.Template {
 		t := template.New("").Funcs(funcMap)
 		allFiles := append([]string{filepath.Join(templatesDir, "base.html")}, files...)
-		partialFiles, _ := filepath.Glob(filepath.Join(templatesDir, "partials", "*.html"))
 		allFiles = append(allFiles, partialFiles...)
 		return template.Must(t.ParseFiles(allFiles...))
+	}
+
+	// A fragment is a page without the page: no base layout, since it is
+	// appended into a document that already exists. It draws through the same
+	// partials, which is the whole point — the ledger has one implementation.
+	parseFragment := func(file string) *template.Template {
+		t := template.New("").Funcs(funcMap)
+		return template.Must(t.ParseFiles(append([]string{file}, partialFiles...)...))
 	}
 
 	templates := map[string]*template.Template{
@@ -189,7 +200,11 @@ func NewRenderer(templatesDir string, dev bool, manifest assets.Manifest) (*Rend
 		"calendar":  parsePage(filepath.Join(templatesDir, "calendar.html")),
 	}
 
-	return &Renderer{templates: templates}, nil
+	fragments := map[string]*template.Template{
+		"daily-older": parseFragment(filepath.Join(templatesDir, "daily-older.html")),
+	}
+
+	return &Renderer{templates: templates, fragments: fragments}, nil
 }
 
 func (r *Renderer) Render(w http.ResponseWriter, name string, data PageData) error {
@@ -199,4 +214,15 @@ func (r *Renderer) Render(w http.ResponseWriter, name string, data PageData) err
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	return t.ExecuteTemplate(w, "base", data)
+}
+
+// RenderFragment writes a bare slice of HTML — no base layout — for a caller
+// that appends it into a page already on screen.
+func (r *Renderer) RenderFragment(w http.ResponseWriter, name string, data PageData) error {
+	t, ok := r.fragments[name]
+	if !ok {
+		return fmt.Errorf("fragment %q not found", name)
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	return t.ExecuteTemplate(w, name, data)
 }

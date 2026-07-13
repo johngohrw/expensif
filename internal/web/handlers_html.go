@@ -248,6 +248,110 @@ func httpDateRangeError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), http.StatusInternalServerError)
 }
 
+// dailyWindowDays is one window of the timeline: the page opens on the 30 days
+// ending today, and the scroll walks back a window at a time.
+const dailyWindowDays = 30
+
+// dailyScrollIsland is the timeline's only script. It names its extension
+// because it is not a React island — plain TypeScript, no components, no JSX.
+const dailyScrollIsland = "daily-scroll.ts"
+
+// olderWindow computes the cursor the scroll island fetches next: the window
+// immediately older than the one starting at start, clamped so the last window
+// stops on the earliest expense rather than running back through empty
+// pre-history. ok is false when nothing older than start exists — the terminal.
+//
+// This is the scroll's entire stop condition, and it lives here rather than in
+// the island, which does no date arithmetic and reads only the cursor's
+// presence. Dates are YYYY-MM-DD, so they compare lexicographically.
+func olderWindow(start, earliest string) (nextStart, nextEnd string, ok bool) {
+	if earliest == "" || earliest >= start {
+		return "", "", false
+	}
+	startT, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		return "", "", false
+	}
+	nextEnd = startT.AddDate(0, 0, -1).Format("2006-01-02")
+	nextStart = startT.AddDate(0, 0, -dailyWindowDays).Format("2006-01-02")
+	if nextStart < earliest {
+		nextStart = earliest
+	}
+	return nextStart, nextEnd, true
+}
+
+// convertDailyGroups converts every expense and day total into the Preferred
+// Currency, in place. When rates are unavailable the groups keep their own
+// currencies — the ledger's own fallback for a missing conversion.
+func (h *HTMLHandler) convertDailyGroups(ctx context.Context, groups []domain.DailyGroup, currency string) {
+	rates, _, err := h.svc.GetRatesForConversion(ctx)
+	if err != nil {
+		return
+	}
+	for i := range groups {
+		var convTotal float64
+		for j := range groups[i].Expenses {
+			conv, convErr := h.svc.ConvertWithRates(groups[i].Expenses[j].Amount, groups[i].Expenses[j].Currency, currency, rates)
+			if convErr == nil {
+				groups[i].Expenses[j].ConvertedAmount = conv
+				convTotal += conv
+			}
+		}
+		groups[i].ConvertedTotal = convTotal
+	}
+}
+
+// HandleDailyOlder serves one older window of the ledger as an HTML fragment,
+// drawn by the same partial as the first window — so the ledger has exactly one
+// implementation, and the scroll cannot drift from the page it extends.
+func (h *HTMLHandler) HandleDailyOlder(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
+
+	startT, startErr := time.Parse("2006-01-02", start)
+	endT, endErr := time.Parse("2006-01-02", end)
+	if startErr != nil || endErr != nil {
+		httpDateRangeError(w, service.ErrInvalidDate)
+		return
+	}
+	// Cursors are server-issued and never span more than a window, so a longer
+	// range is a hand-crafted request — and the gap-fill would answer it with a
+	// row per day for as far back as it asked.
+	if endT.Sub(startT) >= dailyWindowDays*24*time.Hour {
+		http.Error(w, "Range must not exceed one window", http.StatusBadRequest)
+		return
+	}
+
+	// An inverted range is rejected here (400) rather than answered with an
+	// empty window, which would reach the island as an empty fragment,
+	// indistinguishable from the terminal.
+	groups, err := h.svc.DailyGroupsInRange(ctx, start, end)
+	if err != nil {
+		httpDateRangeError(w, err)
+		return
+	}
+
+	data := h.basePageData(ctx, "daily")
+	// The fragment lands in the timeline, so its rows' edit links must lead
+	// back there — never to this endpoint, which serves a bare fragment.
+	data.ReturnTo = "/"
+	h.convertDailyGroups(ctx, groups, data.Currency)
+	data.DailyGroups = groups
+	// The day drawn directly above this window's first row is the day after its
+	// end: the timeline is gap-filled and contiguous, so that is the whole seam,
+	// and the top divider knows whether it is a month break.
+	data.PrevDate = endT.AddDate(0, 0, 1).Format("2006-01-02")
+
+	earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
+	data.NextStart, data.NextEnd, _ = olderWindow(start, earliest)
+
+	if err := h.renderer.RenderFragment(w, "daily-older", data); err != nil {
+		slog.Error("render failed", "fragment", "daily-older", "error", err)
+		http.Error(w, "render error", http.StatusInternalServerError)
+	}
+}
+
 func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	data := h.basePageData(ctx, "daily")
@@ -287,7 +391,7 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, parseErr.Error(), http.StatusInternalServerError)
 			return
 		}
-		start := endT.AddDate(0, 0, -29).Format("2006-01-02")
+		start := endT.AddDate(0, 0, -(dailyWindowDays - 1)).Format("2006-01-02")
 		window, rangeErr := h.svc.DailyGroupsInRange(ctx, start, data.Today)
 		if rangeErr != nil {
 			httpDateRangeError(w, rangeErr)
@@ -301,25 +405,18 @@ func (h *HTMLHandler) HandleDaily(w http.ResponseWriter, r *http.Request) {
 		upcomingCount = len(upcoming)
 		groups = append(upcoming, window...)
 
+		// One fetch answers two questions: whether the account has ever
+		// recorded an expense, and whether anything sits older than the window
+		// for the scroll to reach.
 		earliest, _ := h.svc.GetEarliestExpenseDate(ctx)
 		data.NoExpensesEver = earliest == ""
-	}
-
-	// Convert daily totals and per-row amounts
-	rates, _, rateErr := h.svc.GetRatesForConversion(ctx)
-	if rateErr == nil {
-		for i := range groups {
-			var convTotal float64
-			for j := range groups[i].Expenses {
-				conv, err := h.svc.ConvertWithRates(groups[i].Expenses[j].Amount, groups[i].Expenses[j].Currency, data.Currency, rates)
-				if err == nil {
-					groups[i].Expenses[j].ConvertedAmount = conv
-					convTotal += conv
-				}
-			}
-			groups[i].ConvertedTotal = convTotal
+		if !data.NoExpensesEver {
+			data.NextStart, data.NextEnd, _ = olderWindow(start, earliest)
+			data.Islands = append(data.Islands, dailyScrollIsland)
 		}
 	}
+
+	h.convertDailyGroups(ctx, groups, data.Currency)
 
 	// Cap upcoming at the 3 days nearest today (the slice is newest-first, so
 	// those are its last elements); the rest collapse into the overflow row.

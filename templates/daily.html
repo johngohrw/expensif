@@ -79,10 +79,39 @@
     </div>
   </div>
   {{end}}
-  {{range $i, $g := .DailyGroups}}
-  <div class="border-t {{if monthBreak $.DailyGroups $i}}border-gray-200{{else}}border-gray-50{{end}}">
-    {{template "day-entry" dict "g" $g "sym" $.CurrencySymbol "tz" $.Timezone "today" $.Today "return" $.ReturnTo}}
+  {{template "day-rows" dict "groups" .DailyGroups "prev" "" "sym" .CurrencySymbol "tz" .Timezone "today" .Today "return" .ReturnTo}}
+  {{/* The scroll foot: the island's root, the sentinel it observes, and all
+       four of its states. The island only writes data-state — every state is
+       server-rendered here, so no markup and no Tailwind live in TypeScript.
+       Idle shows nothing, so the page simply ends on a blank row.
+
+       The states hide through the rule below rather than Tailwind's data
+       variants, because the Play CDN is itself JavaScript: with JS off it
+       never runs, `hidden` would style nothing, and the foot would print all
+       four states at once — including "no earlier expenses" on a page whose
+       scroll never ran. Plain CSS is honest in both worlds, and it also spares
+       a first paint that flashes every state before the CDN has generated its
+       classes. */}}
+  <style>
+    [data-daily-scroll] [data-foot] { display: none; }
+    [data-daily-scroll][data-state="loading"] [data-foot="loading"],
+    [data-daily-scroll][data-state="error"] [data-foot="error"],
+    [data-daily-scroll][data-state="end"] [data-foot="end"] { display: inline; }
+  </style>
+  <div
+    data-daily-scroll
+    data-state="{{if .NextStart}}idle{{else}}end{{end}}"
+    {{if .NextStart}}data-next-start="{{.NextStart}}" data-next-end="{{.NextEnd}}"{{end}}
+    class="border-t border-gray-50 px-3 sm:px-4 py-2"
+  >
+    <div class="py-1.5 flex items-center justify-center gap-2 text-xs leading-4">
+      <span data-foot="loading" class="text-gray-400">Loading older days…</span>
+      <span data-foot="end" class="text-gray-300 italic">no earlier expenses</span>
+      <span data-foot="error" class="text-gray-400">Couldn’t load older days.</span>
+      <button data-foot="error" data-retry type="button" class="text-blue-600 hover:text-blue-800 font-semibold">
+        Retry
+      </button>
+    </div>
   </div>
-  {{end}}
 </div>
 {{end}}{{end}} {{end}}

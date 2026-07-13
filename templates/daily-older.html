@@ -1,0 +1,12 @@
+{{/*
+  One older window of the ledger, served to the scroll island by GET
+  /daily/older and appended above the foot. Not a page: no base layout.
+
+  The wrapper carries the cursor for the window older than this one, and
+  carries nothing when this window reaches the earliest expense. That absence
+  is the terminal — the island reads no other stop condition, and does no date
+  arithmetic of its own.
+*/}}
+{{define "daily-older"}}<div{{if .NextStart}} data-next-start="{{.NextStart}}" data-next-end="{{.NextEnd}}"{{end}}>
+{{- template "day-rows" dict "groups" .DailyGroups "prev" .PrevDate "sym" .CurrencySymbol "tz" .Timezone "today" .Today "return" .ReturnTo -}}
+</div>{{end}}

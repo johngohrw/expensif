@@ -14,6 +14,8 @@ export default defineConfig({
         descriptionPills: resolve(__dirname, 'src/entries/description-pills.tsx'),
         dataTable: resolve(__dirname, 'src/entries/data-table.tsx'),
         mobileNav: resolve(__dirname, 'src/entries/mobile-nav.tsx'),
+        // Not a React island: the daily view's infinite scroll is plain TS.
+        dailyScroll: resolve(__dirname, 'src/entries/daily-scroll.ts'),
       },
       output: {
         entryFileNames: 'js/[name].js',
