@@ -1,6 +1,6 @@
 # Expensif — Agent Guide
 
-Go expense tracker: server-rendered HTML with React Islands (partial hydration), SQLite, single binary. Deployed via Docker.
+Go expense tracker: server-rendered HTML with Islands (partial hydration — mostly React, plus one vanilla-TS island; see ADR 0001), SQLite, single binary. Deployed via Docker.
 
 ## Commands
 

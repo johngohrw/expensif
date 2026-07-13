@@ -67,6 +67,15 @@ templates at startup, so restart after template edits. The user's dev database
   `?return=`. Leaves one recorded gap for the ledger ticket, which is what starts
   *sending* `?return=`: the path does not survive a failed save.
 
+- [Architecture docs catch up with what shipped](./tickets/05-architecture-docs.md) —
+  ADR 0001 gains a note (not a new ADR) that the scroll island is the first non-React
+  island and why that doesn't reverse the decision; `AGENTS.md`'s "React Islands" line
+  softened to "mostly React, plus one vanilla-TS island"; `CONTEXT.md` redefines the
+  Daily View as date-indexed and adds **Ledger**, **Rail**, **Window**, **Upcoming**
+  (and widens **Island** off "React component"). The leftover sweep found nothing —
+  earlier tickets already deleted the prototypes, dropped the daily data-table, and
+  replaced the dead `{{if .DailyGroups}}` branch. Docs only; suite green untouched.
+
 ## Not yet specified
 
 <!-- Empty by construction: the planning map cleared all fog before this map was charted. -->

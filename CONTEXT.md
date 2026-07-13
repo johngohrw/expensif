@@ -45,7 +45,23 @@ The expense amount expressed in the preferred currency for display. It is comput
 _Avoid_: normalized amount, display amount
 
 **Daily View**:
-A page that groups expenses by date, newest first, with a subtotal per day.
+A page that is date-indexed: every day in the Window appears, newest first, whether or not it carries an expense, with a subtotal per spending day. Empty days render as muted rows. Rendered as a Ledger.
+
+**Ledger**:
+The Daily View's single continuous layout — no cards. Each day is one row: an empty day is a muted single line with an always-visible add affordance; a spending day lists its expenses between two Rails with a right-aligned day total. Month transitions carry a heavier divider.
+_Avoid_: table, feed, list
+
+**Rail**:
+A thin vertical line running the full height of a day's row in the Ledger. Two Rails frame the expenses column and, because days carry no padding between them, read as unbroken lines down the page.
+_Avoid_: border, divider, gutter
+
+**Window**:
+The rolling 30-day range ending at today that the Daily View renders on first load (`[today-29, today]`). Older Windows load on demand via infinite scroll until the earliest expense is reached. The Window never extends past today.
+_Avoid_: range, page, view
+
+**Upcoming**:
+Future-dated days, shown as an ungapped continuation of the Ledger *above* today, marked only by a tinted date and capped at the three days nearest today (the rest collapse into one overflow row linking to the Calendar View). There is no separate "Upcoming section" — it is the same Ledger continuing.
+_Avoid_: scheduled, future section, forecast
 
 **Calendar View**:
 A monthly grid showing which days have expenses and how much was spent, using a heat map to encode magnitude.
@@ -68,7 +84,7 @@ A 1–5 quintile rank of a day's total spend relative to other days with any spe
 _Avoid_: intensity, score
 
 **Island**:
-A selectively hydrated React component mounted on an otherwise server-rendered HTML page. Each island has a named container and an entry script.
+A selectively hydrated interactive region mounted on an otherwise server-rendered HTML page. Each island has a named container and an entry script. Most islands are React components; the Daily View's infinite scroll is a vanilla-TypeScript island that fetches and appends server-rendered HTML (see ADR 0001).
 _Avoid_: widget, component (when the specific partial-hydration pattern matters)
 
 ## Cross-Context Notes
