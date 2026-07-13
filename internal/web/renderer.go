@@ -38,7 +38,8 @@ type PageData struct {
 	FilterDate     string
 	BackHref       string
 	BackLabel      string
-	NoExpensesEver bool // the account has never recorded an expense (ever, not "in this window")
+	NoExpensesEver bool     // the account has never recorded an expense (ever, not "in this window")
+	ReturnTo       string   // where delete sends the user next; validated as a local path before the redirect
 	Islands        []string // Names of React islands to hydrate on this page
 }
 

@@ -1,7 +1,10 @@
 package web
 
 import (
+	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -48,5 +51,64 @@ func TestHandleDaily_TodayNamedInPreferencesTimezone(t *testing.T) {
 	// not chrome.
 	if !strings.Contains(rec.Body.String(), "Jul 12") {
 		t.Fatal("window does not include 2026-07-12: today was named in UTC, not the Preferences timezone")
+	}
+}
+
+// TestHandleDelete_ReturnPath covers the danger zone's return path. The value
+// arrives in a hidden form field, so it is attacker-supplied in principle: a
+// delete that honoured it blindly would be an open redirect off the back of a
+// destructive POST.
+func TestHandleDelete_ReturnPath(t *testing.T) {
+	tests := []struct {
+		name   string
+		form   string
+		wantTo string
+	}{
+		{"local path is honoured", "return=/daily?date=2026-07-01", "/daily?date=2026-07-01"},
+		{"absent falls back to root", "", "/"},
+		{"empty falls back to root", "return=", "/"},
+		{"protocol-relative host is rejected", "return=" + url.QueryEscape("//evil.example"), "/"},
+		{"absolute URL with a scheme is rejected", "return=" + url.QueryEscape("https://evil.example/x"), "/"},
+		{"backslash-folded host is rejected", "return=" + url.QueryEscape(`/\evil.example`), "/"},
+		{"bare relative path is rejected", "return=" + url.QueryEscape("evil.example"), "/"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := newMockRepo()
+			id, err := repo.CreateExpense(t.Context(), domain.Expense{
+				Amount: 5, Category: "food", Description: "x", Date: "2026-07-01", Currency: "USD",
+			})
+			if err != nil {
+				t.Fatalf("seed expense: %v", err)
+			}
+
+			svc := service.New(repository.Repos{
+				Expenses:    repo,
+				Users:       repo,
+				Preferences: repo,
+				Rates:       repo,
+			}, &mockRateClient{})
+			h := NewHTMLHandler(svc, nil)
+
+			req := httptest.NewRequest("POST", "/expenses/delete/"+strconv.FormatInt(id, 10), strings.NewReader(tt.form))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.SetPathValue("id", strconv.FormatInt(id, 10))
+
+			rec := httptest.NewRecorder()
+			h.HandleDelete(rec, req)
+
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("expected 303, got %d: %s", rec.Code, rec.Body.String())
+			}
+			if got := rec.Header().Get("Location"); got != tt.wantTo {
+				t.Fatalf("redirected to %q, want %q", got, tt.wantTo)
+			}
+			// The delete itself must happen either way — a rejected return
+			// path redirects home, it does not veto the destructive action.
+			if _, err := repo.GetExpense(t.Context(), id); err == nil {
+				t.Fatal("expense survived the delete")
+			}
+		})
 	}
 }

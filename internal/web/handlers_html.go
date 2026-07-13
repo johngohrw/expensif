@@ -5,8 +5,10 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"expensif/internal/domain"
@@ -393,6 +395,10 @@ func (h *HTMLHandler) HandleEdit(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to list users", "error", err)
 	}
 	data.Users = users
+	// Passed through to the danger zone's hidden field, unvalidated: the edit
+	// page is reachable from the timeline, the single-day view and the List
+	// View, and only the redirect that consumes this needs to trust it.
+	data.ReturnTo = r.URL.Query().Get("return")
 	data.Islands = append(data.Islands, "category-pills", "description-pills")
 	h.render(w, "edit", data)
 }
@@ -442,7 +448,24 @@ func (h *HTMLHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, localPath(r.FormValue("return")), http.StatusSeeOther)
+}
+
+// localPath keeps a redirect target inside this app. Anything that could send
+// the browser to another origin — an absolute URL, a protocol-relative "//host",
+// a backslash the browser folds into one — falls back to "/". The value reaches
+// us through a hidden form field, so it is attacker-supplied in principle even
+// though the app only ever issues local paths.
+func localPath(raw string) string {
+	const fallback = "/"
+	if !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") || strings.HasPrefix(raw, `/\`) {
+		return fallback
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "" || u.Host != "" {
+		return fallback
+	}
+	return raw
 }
 
 func (h *HTMLHandler) HandlePreferences(w http.ResponseWriter, r *http.Request) {

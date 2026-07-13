@@ -41,6 +41,14 @@ templates at startup, so restart after template edits. The user's dev database
   template renders the gap-filled window until the ledger lands. The handler's
   400-mapping exists but is only reachable via `/daily/older` (ticket 03's test).
 
+- [The edit page's danger zone](./tickets/04-edit-page-danger-zone.md) — the approved
+  markup shipped verbatim as a sibling form; `PageData.ReturnTo` carries `?return=`
+  through `HandleEdit` to the hidden field, and `localPath` gates it at the redirect —
+  **one gate, on the only line that can send a browser off-origin**, rather than
+  validating at both ends. Seven-case table test; verified live against a hostile
+  `?return=`. Leaves one recorded gap for the ledger ticket, which is what starts
+  *sending* `?return=`: the path does not survive a failed save.
+
 ## Not yet specified
 
 <!-- Empty by construction: the planning map cleared all fog before this map was charted. -->

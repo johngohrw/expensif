@@ -6,4 +6,34 @@
 <form method="POST" action="/expenses/edit/{{.Expense.ID}}">
   {{template "form" dict "Title" (printf "Edit Expense #%d" .Expense.ID) "SubmitLabel" "Save Changes" "Expense" .Expense "Today" .Today "Currency" .Currency "Users" .Users "PaidByID" .PaidByID}}
 </form>
+
+<div class="mt-10 pt-6 border-t border-gray-200">
+  <div class="text-xs font-medium uppercase tracking-wide text-gray-400 mb-2">
+    Danger zone
+  </div>
+  <div class="flex items-center justify-between gap-4">
+    <p class="text-sm text-gray-500">
+      Deleting an expense is permanent. It cannot be undone.
+    </p>
+
+    {{/* A sibling of the edit form, never nested inside it: a <form> within a
+         <form> is invalid HTML, and the page above is already one. */}}
+    <form
+      method="POST"
+      action="/expenses/delete/{{.Expense.ID}}"
+      onsubmit="return confirm('Delete expense #{{.Expense.ID}}?')"
+    >
+      {{/* Where to land after the delete. HandleDelete re-validates it as a
+           local path and falls back to "/". */}}
+      <input type="hidden" name="return" value="{{.ReturnTo}}" />
+
+      <button
+        type="submit"
+        class="bg-red-50 text-red-600 hover:bg-red-100 rounded px-3 py-1.5 text-sm font-medium shrink-0"
+      >
+        Delete expense
+      </button>
+    </form>
+  </div>
+</div>
 {{end}}
