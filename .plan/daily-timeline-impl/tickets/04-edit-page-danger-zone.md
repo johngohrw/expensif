@@ -1,6 +1,8 @@
 ---
 type: task
 blocked_by: []
+claimed_by: claude-code-session-efb86036
+claimed_at: 2026-07-13T00:00:00Z
 assets: [../../daily-timeline/assets/edit-delete-danger-zone.html.approved]
 ---
 
