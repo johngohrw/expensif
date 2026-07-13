@@ -1,6 +1,8 @@
 ---
 type: task
 blocked_by: [01, 04]
+claimed_by: claude-code-session-716e8e8c
+claimed_at: 2026-07-13T00:00:00Z
 assets:
   [
     ../../daily-timeline/assets/day-entry-ledger.html.approved,
